@@ -1,0 +1,2418 @@
+#define _WIN32_WINNT 0x0A00
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+
+#include <windows.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <wchar.h>
+#include <math.h>
+
+#ifdef __MINGW32__
+#define swprintf _snwprintf
+#endif
+
+#ifndef LSTATUS
+typedef LONG LSTATUS;
+#endif
+#ifndef STDMETHODCALLTYPE
+#define STDMETHODCALLTYPE __stdcall
+#endif
+#ifndef GET_X_LPARAM
+#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
+#endif
+#ifndef FW_SEMIBOLD
+#define FW_SEMIBOLD 600
+#endif
+#ifndef RIDEV_DEVNOTIFY
+#define RIDEV_DEVNOTIFY 0x00002000
+#endif
+#ifndef RIDEV_NOLEGACY
+#define RIDEV_NOLEGACY 0x00000030
+#endif
+#ifndef LLMHF_INJECTED
+#define LLMHF_INJECTED 0x00000001
+#endif
+#ifndef WM_INPUT_DEVICE_CHANGE
+#define WM_INPUT_DEVICE_CHANGE 0x00FE
+#endif
+#ifndef YieldProcessor
+#if defined(__MINGW32__) || defined(__GNUC__)
+static __inline__ void _v8k_yield(void) { __asm__ __volatile__("pause":::"memory"); }
+#define YieldProcessor() _v8k_yield()
+#elif defined(_MSC_VER)
+#include <intrin.h>
+#define YieldProcessor() _mm_pause()
+#else
+#define YieldProcessor() Sleep(0)
+#endif
+#endif
+
+struct IUnknown {
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(const GUID&, void**) = 0;
+    virtual ULONG STDMETHODCALLTYPE AddRef(void) = 0;
+    virtual ULONG STDMETHODCALLTYPE Release(void) = 0;
+};
+
+typedef enum DXGI_FORMAT {
+    DXGI_FORMAT_UNKNOWN = 0,
+    DXGI_FORMAT_R8G8B8A8_UNORM = 28
+} DXGI_FORMAT;
+
+typedef struct DXGI_RATIONAL {
+    UINT Numerator;
+    UINT Denominator;
+} DXGI_RATIONAL;
+
+typedef enum DXGI_MODE_SCANLINE_ORDER {
+    DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED = 0
+} DXGI_MODE_SCANLINE_ORDER;
+
+typedef enum DXGI_MODE_SCALING {
+    DXGI_MODE_SCALING_UNSPECIFIED = 0
+} DXGI_MODE_SCALING;
+
+typedef enum DXGI_MODE_ROTATION {
+    DXGI_MODE_ROTATION_UNSPECIFIED = 0
+} DXGI_MODE_ROTATION;
+
+typedef struct DXGI_MODE_DESC {
+    UINT Width;
+    UINT Height;
+    DXGI_RATIONAL RefreshRate;
+    DXGI_FORMAT Format;
+    DXGI_MODE_SCANLINE_ORDER ScanlineOrdering;
+    DXGI_MODE_SCALING Scaling;
+} DXGI_MODE_DESC;
+
+typedef struct DXGI_OUTPUT_DESC {
+    WCHAR DeviceName[32];
+    RECT DesktopCoordinates;
+    BOOL AttachedToDesktop;
+    DXGI_MODE_ROTATION Rotation;
+    HMONITOR Monitor;
+} DXGI_OUTPUT_DESC;
+
+typedef struct DXGI_ADAPTER_DESC {
+    WCHAR Description[128];
+    UINT VendorId;
+    UINT DeviceId;
+    UINT SubSysId;
+    UINT Revision;
+    SIZE_T DedicatedVideoMemory;
+    SIZE_T DedicatedSystemMemory;
+    SIZE_T SharedSystemMemory;
+    LUID AdapterLuid;
+} DXGI_ADAPTER_DESC;
+
+typedef struct DXGI_ADAPTER_DESC1 {
+    WCHAR Description[128];
+    UINT VendorId;
+    UINT DeviceId;
+    UINT SubSysId;
+    UINT Revision;
+    SIZE_T DedicatedVideoMemory;
+    SIZE_T DedicatedSystemMemory;
+    SIZE_T SharedSystemMemory;
+    LUID AdapterLuid;
+    UINT Flags;
+} DXGI_ADAPTER_DESC1;
+
+typedef struct DXGI_GAMMA_CONTROL_CAPABILITIES { BOOL ScaleAndOffsetSupported; float MaxConvertedValue; float MinConvertedValue; UINT NumGammaControlPoints; float ControlPointPositions[1025]; } DXGI_GAMMA_CONTROL_CAPABILITIES;
+typedef struct DXGI_GAMMA_CONTROL { struct { float Red; float Green; float Blue; } Scale; struct { float Red; float Green; float Blue; } Offset; struct { float Red; float Green; float Blue; } GammaCurve[1025]; } DXGI_GAMMA_CONTROL;
+typedef struct DXGI_FRAME_STATISTICS { UINT PresentCount; UINT PresentRefreshCount; UINT SyncRefreshCount; LARGE_INTEGER SyncQPCTime; LARGE_INTEGER SyncGPUTime; } DXGI_FRAME_STATISTICS;
+
+#ifndef DXGI_ERROR_NOT_FOUND
+#define DXGI_ERROR_NOT_FOUND ((HRESULT)0x887A0002L)
+#endif
+#ifndef DXGI_ADAPTER_FLAG_SOFTWARE
+#define DXGI_ADAPTER_FLAG_SOFTWARE 2
+#endif
+
+struct IDXGISurface;
+
+struct IDXGIObject : public IUnknown {
+    virtual HRESULT STDMETHODCALLTYPE SetPrivateData(const GUID&, UINT, const void*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetPrivateDataInterface(const GUID&, const IUnknown*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetPrivateData(const GUID&, UINT*, void*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetParent(const GUID&, void**) = 0;
+};
+
+struct IDXGIOutput : public IDXGIObject {
+    virtual HRESULT STDMETHODCALLTYPE GetDesc(DXGI_OUTPUT_DESC*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetDisplayModeList(DXGI_FORMAT, UINT, UINT*, DXGI_MODE_DESC*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE FindClosestMatchingMode(const DXGI_MODE_DESC*, DXGI_MODE_DESC*, IUnknown*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE WaitForVBlank(void) = 0;
+    virtual HRESULT STDMETHODCALLTYPE TakeOwnership(IUnknown*, BOOL) = 0;
+    virtual void STDMETHODCALLTYPE ReleaseOwnership(void) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetGammaControlCapabilities(DXGI_GAMMA_CONTROL_CAPABILITIES*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetGammaControl(const DXGI_GAMMA_CONTROL*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetGammaControl(DXGI_GAMMA_CONTROL*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetDisplaySurface(IDXGISurface*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetDisplaySurfaceData(IDXGISurface*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetFrameStatistics(DXGI_FRAME_STATISTICS*) = 0;
+};
+
+struct IDXGIAdapter : public IDXGIObject {
+    virtual HRESULT STDMETHODCALLTYPE EnumOutputs(UINT, IDXGIOutput**) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetDesc(DXGI_ADAPTER_DESC*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE CheckInterfaceSupport(const GUID&, LARGE_INTEGER*) = 0;
+};
+
+struct IDXGIAdapter1 : public IDXGIAdapter {
+    virtual HRESULT STDMETHODCALLTYPE GetDesc1(DXGI_ADAPTER_DESC1*) = 0;
+};
+
+struct IDXGISwapChain;
+
+struct IDXGIFactory : public IDXGIObject {
+    virtual HRESULT STDMETHODCALLTYPE EnumAdapters(UINT, IDXGIAdapter**) = 0;
+    virtual HRESULT STDMETHODCALLTYPE MakeWindowAssociation(HWND, UINT) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetWindowAssociation(HWND*) = 0;
+    virtual HRESULT STDMETHODCALLTYPE CreateSwapChain(IUnknown*, void*, IDXGISwapChain**) = 0;
+    virtual HRESULT STDMETHODCALLTYPE CreateSoftwareAdapter(HMODULE, IDXGIAdapter**) = 0;
+};
+
+struct IDXGIFactory1 : public IDXGIFactory {
+    virtual HRESULT STDMETHODCALLTYPE EnumAdapters1(UINT, IDXGIAdapter1**) = 0;
+    virtual BOOL STDMETHODCALLTYPE IsCurrent(void) = 0;
+};
+
+typedef enum D3D_DRIVER_TYPE {
+    D3D_DRIVER_TYPE_UNKNOWN = 0,
+    D3D_DRIVER_TYPE_HARDWARE = 1
+} D3D_DRIVER_TYPE;
+
+typedef enum D3D_FEATURE_LEVEL {
+    D3D_FEATURE_LEVEL_10_0 = 0xa000,
+    D3D_FEATURE_LEVEL_10_1 = 0xa100,
+    D3D_FEATURE_LEVEL_11_0 = 0xb000
+} D3D_FEATURE_LEVEL;
+
+#ifndef D3D11_SDK_VERSION
+#define D3D11_SDK_VERSION 7
+#endif
+
+struct ID3D11Device : public IUnknown {};
+struct ID3D11DeviceContext : public IUnknown {};
+
+typedef HRESULT (WINAPI *PFN_CreateDXGIFactory1)(const GUID& riid, void** ppFactory);
+typedef HRESULT (WINAPI *PFN_D3D11CreateDevice)(IUnknown* pAdapter, D3D_DRIVER_TYPE DriverType, HMODULE Software, UINT Flags,
+    const D3D_FEATURE_LEVEL* pFeatureLevels, UINT FeatureLevels, UINT SDKVersion, ID3D11Device** ppDevice,
+    D3D_FEATURE_LEVEL* pFeatureLevel, ID3D11DeviceContext** ppImmediateContext);
+
+#ifndef MOUSEEVENTF_MOVE_NOCOALESCE
+#define MOUSEEVENTF_MOVE_NOCOALESCE 0x2000
+#endif
+#ifndef MOUSEEVENTF_VIRTUALDESK
+#define MOUSEEVENTF_VIRTUALDESK 0x4000
+#endif
+#ifndef QDC_ONLY_ACTIVE_PATHS
+#define QDC_ONLY_ACTIVE_PATHS 0x00000002
+#endif
+
+#define V8K_APP_NAME              L"Virtual 8K"
+#define V8K_CLASS_NAME            L"Virtual8KProWindow"
+#define V8K_RAW_CLASS_NAME        L"Virtual8KRawInputWindow"
+#define V8K_REG_PATH              L"Software\\Virtual8K"
+#define V8K_TRIAL_VALUE           L"TrialDpapi"
+#define V8K_LICENSE_VALUE         L"LicenseDpapi"
+#define V8K_EXTRA_INFO            ((ULONG_PTR)0x56384B50524F2026ULL)
+#define V8K_QUEUE_SIZE            4096
+#define V8K_QUEUE_MASK            (V8K_QUEUE_SIZE - 1)
+#define V8K_MAX_MICRO_STEPS       8
+#define V8K_MAX_OUTPUT_HZ         8000.0
+#define V8K_STEP_US               (1000000.0 / V8K_MAX_OUTPUT_HZ)
+#define V8K_IDLE_SAFE_US          1000000.0
+#define V8K_THREAD_STALE_US       500000.0
+#define V8K_SKIP_RAW_WINDOW_US    20000.0
+#define V8K_STALE_INPUT_US        2500.0
+#define V8K_BACKLOG_CATCHUP_DEPTH 2
+#define V8K_TRIAL_DAYS            30
+#define V8K_GRAPH_SAMPLES         160
+#define V8K_MAX_TEXT              256
+
+volatile LONG g_Injecting = 0;
+volatile LONG g_SkipNextRaw = 0;
+
+struct RawMove {
+    LONG dx;
+    LONG dy;
+    LARGE_INTEGER qpc;
+    HANDLE device;
+};
+
+struct Kalman1D {
+    double x;
+    double p;
+    int initialized;
+};
+
+struct MotionState {
+    double velX;
+    double velY;
+    double speed;
+    double accel;
+    int flick;
+};
+
+struct Settings {
+    volatile LONG enabled;
+    volatile LONG highPerformance;
+    volatile LONG syncToDwm;
+    volatile LONG testMode;
+    volatile LONG aggressiveRaw;
+    double kalmanQ;
+    double kalmanR;
+    double splineTension;
+    double syncOffsetUs;
+    double virtualHzLimit;
+};
+
+struct Stats {
+    double physicalHz;
+    double virtualHz;
+    double latencyMinUs;
+    double latencyMaxUs;
+    double latencyAvgUs;
+    double cpuPercent;
+    double gpuPercent;
+    double speedMetersPerSec;
+    double outputHzMeasured;
+    double rawPeriodMinUs;
+    double rawPeriodAvgUs;
+    double rawPeriodMaxUs;
+    double engineAgeUs;
+    double m1HookLatencyUs;
+    double m1WindowLatencyUs;
+    double graph[V8K_GRAPH_SAMPLES];
+    int graphHead;
+    volatile LONG rawEvents;
+    volatile LONG injectedEvents;
+    volatile LONG coalescedEvents;
+    volatile LONG droppedEvents;
+    volatile LONG m1Events;
+    volatile LONG safeMode;
+    WCHAR warning[V8K_MAX_TEXT];
+};
+
+struct HardwareInfo {
+    WCHAR monitorName[64];
+    WCHAR monitorDevice[64];
+    WCHAR gpuName[160];
+    WCHAR gpuVendor[40];
+    WCHAR mouseName[256];
+    WCHAR syncStatus[160];
+    WCHAR mpoStatus[96];
+    int width;
+    int height;
+    int bpp;
+    int physicalWidthMm;
+    int physicalHeightMm;
+    int mouseCount;
+    double refreshHz;
+    double pixelClockMHz;
+    double metersPerPixel;
+    BOOL d3dReady;
+    BOOL dwmComposition;
+};
+
+struct PointerInfo {
+    int speed;
+    int threshold1;
+    int threshold2;
+    int acceleration;
+};
+
+struct TrialRecord {
+    DWORD magic;
+    DWORD version;
+    FILETIME firstRunUtc;
+    FILETIME lastRunUtc;
+    DWORD nonce;
+};
+
+struct LicenseRecord {
+    DWORD magic;
+    DWORD version;
+    WCHAR email[128];
+    WCHAR key[128];
+};
+
+struct LicenseState {
+    BOOL pro;
+    BOOL trialOk;
+    BOOL tampered;
+    int daysLeft;
+    WCHAR email[128];
+    WCHAR key[128];
+    WCHAR status[160];
+};
+
+struct RegApi {
+    HMODULE module;
+    LSTATUS (WINAPI *RegCreateKeyExW_p)(HKEY, LPCWSTR, DWORD, LPWSTR, DWORD, REGSAM, const SECURITY_ATTRIBUTES*, PHKEY, LPDWORD);
+    LSTATUS (WINAPI *RegSetValueExW_p)(HKEY, LPCWSTR, DWORD, DWORD, const BYTE*, DWORD);
+    LSTATUS (WINAPI *RegQueryValueExW_p)(HKEY, LPCWSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD);
+    LSTATUS (WINAPI *RegCloseKey_p)(HKEY);
+};
+
+struct Blob {
+    DWORD cbData;
+    BYTE* pbData;
+};
+
+struct CryptoApi {
+    HMODULE module;
+    BOOL (WINAPI *CryptProtectData_p)(Blob*, LPCWSTR, Blob*, PVOID, PVOID, DWORD, Blob*);
+    BOOL (WINAPI *CryptUnprotectData_p)(Blob*, LPWSTR*, Blob*, PVOID, PVOID, DWORD, Blob*);
+};
+
+struct DwmApi {
+    HMODULE module;
+    HRESULT (WINAPI *DwmFlush_p)(void);
+    HRESULT (WINAPI *DwmIsCompositionEnabled_p)(BOOL*);
+    HRESULT (WINAPI *DwmSetWindowAttribute_p)(HWND, DWORD, LPCVOID, DWORD);
+};
+
+struct NtApi {
+    HMODULE module;
+    LONG (WINAPI *NtSetTimerResolution_p)(ULONG, BOOLEAN, PULONG);
+};
+
+struct CpuSample {
+    ULONGLONG sysIdle;
+    ULONGLONG sysKernel;
+    ULONGLONG sysUser;
+    ULONGLONG procKernel;
+    ULONGLONG procUser;
+    BOOL valid;
+};
+
+static HINSTANCE g_hInst = 0;
+static HWND g_hWnd = 0;
+static HWND g_hEmailEdit = 0;
+static HWND g_hKeyEdit = 0;
+static HHOOK g_mouseHook = 0;
+static HANDLE g_hookThread = 0;
+static HANDLE g_hookReady = 0;
+static DWORD g_hookThreadId = 0;
+static volatile LONG g_hookOk = 0;
+static HANDLE g_rawThread = 0;
+static HANDLE g_rawReady = 0;
+static DWORD g_rawThreadId = 0;
+static HWND g_rawHwnd = 0;
+static HANDLE g_engineThread = 0;
+static HANDLE g_rawEvent = 0;
+static volatile LONG g_shutdown = 0;
+static volatile LONG g_rawRegistered = 0;
+static volatile LONG g_queueHead = 0;
+static volatile LONG g_queueTail = 0;
+static RawMove g_queue[V8K_QUEUE_SIZE];
+static LARGE_INTEGER g_qpcFreq;
+static LARGE_INTEGER g_lastPhysicalQpc;
+static LARGE_INTEGER g_lastInjectQpc;
+static LARGE_INTEGER g_engineHeartbeatQpc;
+static Settings g_settings = {0, 1, 1, 0, 0, 0.015, 0.18, 0.25, 0.0, 8000.0};
+static MotionState g_motion = {0.0, 0.0, 0.0, 0.0, 0};
+static Stats g_stats;
+static HardwareInfo g_hw;
+static PointerInfo g_pointer;
+static LicenseState g_license;
+static RegApi g_reg;
+static CryptoApi g_crypto;
+static DwmApi g_dwm;
+static NtApi g_nt;
+static CpuSample g_cpuLast;
+static HFONT g_font = 0;
+static HFONT g_fontBold = 0;
+static HBRUSH g_editBrush = 0;
+static int g_activeTab = 0;
+static int g_dragSlider = -1;
+static RECT g_startButton;
+static RECT g_modeButton;
+static RECT g_syncButton;
+static RECT g_licenseButton;
+static RECT g_sliderRects[5];
+static LARGE_INTEGER g_lastM1HookQpc;
+static HANDLE g_lastNamedDevice = 0;
+
+static const BYTE g_dpapiEntropy[] = {
+    0x56,0x38,0x4B,0x2D,0x44,0x50,0x41,0x50,0x49,0x2D,0x32,0x30,0x32,0x36
+};
+static const BYTE g_licenseSecret[] = {
+    0x22,0x81,0x11,0x9A,0xB0,0x4D,0x7C,0xFA,0x6E,0x3B,0x43,0x91,0xC4,0x55,0x0D,0x70,
+    0x19,0xE0,0xA4,0xA5,0x31,0x6D,0x3E,0x02,0x97,0x13,0xC8,0x45,0xB7,0x28,0x5F,0xD1
+};
+
+static void CopyW(WCHAR* dst, int cap, const WCHAR* src) {
+    if (!dst || cap <= 0) return;
+    int i = 0;
+    if (src) {
+        for (; i < cap - 1 && src[i]; ++i) dst[i] = src[i];
+    }
+    dst[i] = 0;
+}
+
+static void AppendW(WCHAR* dst, int cap, const WCHAR* src) {
+    if (!dst || cap <= 0 || !src) return;
+    int n = 0;
+    while (n < cap - 1 && dst[n]) ++n;
+    int i = 0;
+    while (n < cap - 1 && src[i]) dst[n++] = src[i++];
+    dst[n] = 0;
+}
+
+static double ClampD(double v, double lo, double hi) {
+    return v < lo ? lo : (v > hi ? hi : v);
+}
+
+static int ClampI(int v, int lo, int hi) {
+    return v < lo ? lo : (v > hi ? hi : v);
+}
+
+static int ComputeMicroSteps(double physicalHz) {
+    if (physicalHz < 1.0 || physicalHz > 20000.0) physicalHz = 1000.0;
+    double target = ClampD(g_settings.virtualHzLimit, 1000.0, 8000.0);
+    double ratio = target / physicalHz;
+    return ClampI((int)floor(ratio + 0.5), 1, V8K_MAX_MICRO_STEPS);
+}
+
+static double ComputeVirtualHz(double physicalHz) {
+    if (physicalHz < 1.0 || physicalHz > 20000.0) physicalHz = 1000.0;
+    double out = physicalHz * (double)ComputeMicroSteps(physicalHz);
+    return out > V8K_MAX_OUTPUT_HZ ? V8K_MAX_OUTPUT_HZ : out;
+}
+
+static int RoundI(double v) {
+    return (int)(v >= 0.0 ? v + 0.5 : v - 0.5);
+}
+
+static ULONGLONG FileTimeToU64(const FILETIME& ft) {
+    ULARGE_INTEGER u;
+    u.LowPart = ft.dwLowDateTime;
+    u.HighPart = ft.dwHighDateTime;
+    return u.QuadPart;
+}
+
+static ULONGLONG FtNow() {
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    return FileTimeToU64(ft);
+}
+
+static double QpcElapsedUs(const LARGE_INTEGER& a, const LARGE_INTEGER& b) {
+    return (double)(b.QuadPart - a.QuadPart) * 1000000.0 / (double)g_qpcFreq.QuadPart;
+}
+
+static LONGLONG UsToQpc(double us) {
+    return (LONGLONG)(us * (double)g_qpcFreq.QuadPart / 1000000.0);
+}
+
+static void FormatDouble(WCHAR* out, int cap, const WCHAR* label, double v, const WCHAR* suffix, int decimals) {
+    WCHAR fmt[32];
+    wsprintfW(fmt, L"%%s%%.%df%%s", decimals);
+    swprintf(out, cap, fmt, label, v, suffix ? suffix : L"");
+}
+
+static void SetWarning(const WCHAR* text) {
+    CopyW(g_stats.warning, V8K_MAX_TEXT, text);
+}
+
+static BOOL LoadDynamicApis() {
+    g_reg.module = LoadLibraryW(L"advapi32.dll");
+    if (g_reg.module) {
+        g_reg.RegCreateKeyExW_p = (LSTATUS (WINAPI*)(HKEY,LPCWSTR,DWORD,LPWSTR,DWORD,REGSAM,const SECURITY_ATTRIBUTES*,PHKEY,LPDWORD))GetProcAddress(g_reg.module, "RegCreateKeyExW");
+        g_reg.RegSetValueExW_p = (LSTATUS (WINAPI*)(HKEY,LPCWSTR,DWORD,DWORD,const BYTE*,DWORD))GetProcAddress(g_reg.module, "RegSetValueExW");
+        g_reg.RegQueryValueExW_p = (LSTATUS (WINAPI*)(HKEY,LPCWSTR,LPDWORD,LPDWORD,LPBYTE,LPDWORD))GetProcAddress(g_reg.module, "RegQueryValueExW");
+        g_reg.RegCloseKey_p = (LSTATUS (WINAPI*)(HKEY))GetProcAddress(g_reg.module, "RegCloseKey");
+    }
+    g_crypto.module = LoadLibraryW(L"crypt32.dll");
+    if (g_crypto.module) {
+        g_crypto.CryptProtectData_p = (BOOL (WINAPI*)(Blob*,LPCWSTR,Blob*,PVOID,PVOID,DWORD,Blob*))GetProcAddress(g_crypto.module, "CryptProtectData");
+        g_crypto.CryptUnprotectData_p = (BOOL (WINAPI*)(Blob*,LPWSTR*,Blob*,PVOID,PVOID,DWORD,Blob*))GetProcAddress(g_crypto.module, "CryptUnprotectData");
+    }
+    g_dwm.module = LoadLibraryW(L"dwmapi.dll");
+    if (g_dwm.module) {
+        g_dwm.DwmFlush_p = (HRESULT (WINAPI*)(void))GetProcAddress(g_dwm.module, "DwmFlush");
+        g_dwm.DwmIsCompositionEnabled_p = (HRESULT (WINAPI*)(BOOL*))GetProcAddress(g_dwm.module, "DwmIsCompositionEnabled");
+        g_dwm.DwmSetWindowAttribute_p = (HRESULT (WINAPI*)(HWND,DWORD,LPCVOID,DWORD))GetProcAddress(g_dwm.module, "DwmSetWindowAttribute");
+    }
+    g_nt.module = LoadLibraryW(L"ntdll.dll");
+    if (g_nt.module) {
+        g_nt.NtSetTimerResolution_p = (LONG (WINAPI*)(ULONG,BOOLEAN,PULONG))GetProcAddress(g_nt.module, "NtSetTimerResolution");
+    }
+    return TRUE;
+}
+
+static BOOL RegOpenAppKey(HKEY* key) {
+    if (!key || !g_reg.RegCreateKeyExW_p) return FALSE;
+    DWORD disp = 0;
+    return g_reg.RegCreateKeyExW_p(HKEY_CURRENT_USER, V8K_REG_PATH, 0, 0, 0, KEY_READ | KEY_WRITE, 0, key, &disp) == ERROR_SUCCESS;
+}
+
+static BOOL RegReadBinary(const WCHAR* name, BYTE* data, DWORD* bytes) {
+    HKEY key = 0;
+    if (!RegOpenAppKey(&key)) return FALSE;
+    DWORD type = 0;
+    LSTATUS st = g_reg.RegQueryValueExW_p(key, name, 0, &type, data, bytes);
+    g_reg.RegCloseKey_p(key);
+    return st == ERROR_SUCCESS && type == REG_BINARY;
+}
+
+static BOOL RegWriteBinary(const WCHAR* name, const BYTE* data, DWORD bytes) {
+    HKEY key = 0;
+    if (!RegOpenAppKey(&key)) return FALSE;
+    LSTATUS st = g_reg.RegSetValueExW_p(key, name, 0, REG_BINARY, data, bytes);
+    g_reg.RegCloseKey_p(key);
+    return st == ERROR_SUCCESS;
+}
+
+static BOOL ProtectBytes(const BYTE* plain, DWORD plainBytes, BYTE* out, DWORD* outBytes) {
+    if (!g_crypto.CryptProtectData_p || !plain || !out || !outBytes) return FALSE;
+    Blob inBlob;
+    inBlob.cbData = plainBytes;
+    inBlob.pbData = (BYTE*)plain;
+    Blob entropy;
+    entropy.cbData = sizeof(g_dpapiEntropy);
+    entropy.pbData = (BYTE*)g_dpapiEntropy;
+    Blob outBlob;
+    outBlob.cbData = 0;
+    outBlob.pbData = 0;
+    if (!g_crypto.CryptProtectData_p(&inBlob, L"Virtual8K", &entropy, 0, 0, 0x1, &outBlob)) return FALSE;
+    if (outBlob.cbData > *outBytes) {
+        LocalFree(outBlob.pbData);
+        return FALSE;
+    }
+    for (DWORD i = 0; i < outBlob.cbData; ++i) out[i] = outBlob.pbData[i];
+    *outBytes = outBlob.cbData;
+    LocalFree(outBlob.pbData);
+    return TRUE;
+}
+
+static BOOL UnprotectBytes(const BYTE* cipher, DWORD cipherBytes, BYTE* out, DWORD* outBytes) {
+    if (!g_crypto.CryptUnprotectData_p || !cipher || !out || !outBytes) return FALSE;
+    Blob inBlob;
+    inBlob.cbData = cipherBytes;
+    inBlob.pbData = (BYTE*)cipher;
+    Blob entropy;
+    entropy.cbData = sizeof(g_dpapiEntropy);
+    entropy.pbData = (BYTE*)g_dpapiEntropy;
+    Blob outBlob;
+    outBlob.cbData = 0;
+    outBlob.pbData = 0;
+    if (!g_crypto.CryptUnprotectData_p(&inBlob, 0, &entropy, 0, 0, 0x1, &outBlob)) return FALSE;
+    if (outBlob.cbData > *outBytes) {
+        LocalFree(outBlob.pbData);
+        return FALSE;
+    }
+    for (DWORD i = 0; i < outBlob.cbData; ++i) out[i] = outBlob.pbData[i];
+    *outBytes = outBlob.cbData;
+    LocalFree(outBlob.pbData);
+    return TRUE;
+}
+
+struct Sha256Ctx {
+    uint8_t data[64];
+    uint32_t datalen;
+    uint64_t bitlen;
+    uint32_t state[8];
+};
+
+static uint32_t Ror32(uint32_t a, uint32_t b) {
+    return (a >> b) | (a << (32 - b));
+}
+
+static const uint32_t kSha256[64] = {
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+};
+
+static void Sha256Transform(Sha256Ctx* ctx, const uint8_t data[]) {
+    uint32_t a,b,c,d,e,f,g,h,i,j,t1,t2,m[64];
+    for (i = 0, j = 0; i < 16; ++i, j += 4) {
+        m[i] = ((uint32_t)data[j] << 24) | ((uint32_t)data[j + 1] << 16) | ((uint32_t)data[j + 2] << 8) | data[j + 3];
+    }
+    for (; i < 64; ++i) {
+        uint32_t s0 = Ror32(m[i - 15], 7) ^ Ror32(m[i - 15], 18) ^ (m[i - 15] >> 3);
+        uint32_t s1 = Ror32(m[i - 2], 17) ^ Ror32(m[i - 2], 19) ^ (m[i - 2] >> 10);
+        m[i] = m[i - 16] + s0 + m[i - 7] + s1;
+    }
+    a = ctx->state[0]; b = ctx->state[1]; c = ctx->state[2]; d = ctx->state[3];
+    e = ctx->state[4]; f = ctx->state[5]; g = ctx->state[6]; h = ctx->state[7];
+    for (i = 0; i < 64; ++i) {
+        uint32_t s1 = Ror32(e, 6) ^ Ror32(e, 11) ^ Ror32(e, 25);
+        uint32_t ch = (e & f) ^ ((~e) & g);
+        t1 = h + s1 + ch + kSha256[i] + m[i];
+        uint32_t s0 = Ror32(a, 2) ^ Ror32(a, 13) ^ Ror32(a, 22);
+        uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+        t2 = s0 + maj;
+        h = g; g = f; f = e; e = d + t1;
+        d = c; c = b; b = a; a = t1 + t2;
+    }
+    ctx->state[0] += a; ctx->state[1] += b; ctx->state[2] += c; ctx->state[3] += d;
+    ctx->state[4] += e; ctx->state[5] += f; ctx->state[6] += g; ctx->state[7] += h;
+}
+
+static void Sha256Init(Sha256Ctx* ctx) {
+    ctx->datalen = 0;
+    ctx->bitlen = 0;
+    ctx->state[0] = 0x6a09e667; ctx->state[1] = 0xbb67ae85; ctx->state[2] = 0x3c6ef372; ctx->state[3] = 0xa54ff53a;
+    ctx->state[4] = 0x510e527f; ctx->state[5] = 0x9b05688c; ctx->state[6] = 0x1f83d9ab; ctx->state[7] = 0x5be0cd19;
+}
+
+static void Sha256Update(Sha256Ctx* ctx, const uint8_t* data, size_t len) {
+    for (size_t i = 0; i < len; ++i) {
+        ctx->data[ctx->datalen++] = data[i];
+        if (ctx->datalen == 64) {
+            Sha256Transform(ctx, ctx->data);
+            ctx->bitlen += 512;
+            ctx->datalen = 0;
+        }
+    }
+}
+
+static void Sha256Final(Sha256Ctx* ctx, uint8_t hash[32]) {
+    uint32_t i = ctx->datalen;
+    if (ctx->datalen < 56) {
+        ctx->data[i++] = 0x80;
+        while (i < 56) ctx->data[i++] = 0x00;
+    } else {
+        ctx->data[i++] = 0x80;
+        while (i < 64) ctx->data[i++] = 0x00;
+        Sha256Transform(ctx, ctx->data);
+        for (i = 0; i < 56; ++i) ctx->data[i] = 0;
+    }
+    ctx->bitlen += ctx->datalen * 8;
+    ctx->data[63] = (uint8_t)(ctx->bitlen);
+    ctx->data[62] = (uint8_t)(ctx->bitlen >> 8);
+    ctx->data[61] = (uint8_t)(ctx->bitlen >> 16);
+    ctx->data[60] = (uint8_t)(ctx->bitlen >> 24);
+    ctx->data[59] = (uint8_t)(ctx->bitlen >> 32);
+    ctx->data[58] = (uint8_t)(ctx->bitlen >> 40);
+    ctx->data[57] = (uint8_t)(ctx->bitlen >> 48);
+    ctx->data[56] = (uint8_t)(ctx->bitlen >> 56);
+    Sha256Transform(ctx, ctx->data);
+    for (i = 0; i < 4; ++i) {
+        hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0xff;
+        hash[i + 4]  = (ctx->state[1] >> (24 - i * 8)) & 0xff;
+        hash[i + 8]  = (ctx->state[2] >> (24 - i * 8)) & 0xff;
+        hash[i + 12] = (ctx->state[3] >> (24 - i * 8)) & 0xff;
+        hash[i + 16] = (ctx->state[4] >> (24 - i * 8)) & 0xff;
+        hash[i + 20] = (ctx->state[5] >> (24 - i * 8)) & 0xff;
+        hash[i + 24] = (ctx->state[6] >> (24 - i * 8)) & 0xff;
+        hash[i + 28] = (ctx->state[7] >> (24 - i * 8)) & 0xff;
+    }
+}
+
+static void HmacSha256(const BYTE* key, int keyLen, const BYTE* data, int dataLen, BYTE out[32]) {
+    BYTE kopad[64];
+    BYTE kipad[64];
+    BYTE keyHash[32];
+    if (keyLen > 64) {
+        Sha256Ctx kctx;
+        Sha256Init(&kctx);
+        Sha256Update(&kctx, key, (size_t)keyLen);
+        Sha256Final(&kctx, keyHash);
+        key = keyHash;
+        keyLen = 32;
+    }
+    for (int i = 0; i < 64; ++i) {
+        BYTE b = (i < keyLen) ? key[i] : 0;
+        kipad[i] = b ^ 0x36;
+        kopad[i] = b ^ 0x5c;
+    }
+    Sha256Ctx ctx;
+    BYTE inner[32];
+    Sha256Init(&ctx);
+    Sha256Update(&ctx, kipad, 64);
+    Sha256Update(&ctx, data, (size_t)dataLen);
+    Sha256Final(&ctx, inner);
+    Sha256Init(&ctx);
+    Sha256Update(&ctx, kopad, 64);
+    Sha256Update(&ctx, inner, 32);
+    Sha256Final(&ctx, out);
+}
+
+static char HexNibble(int v) {
+    return (char)(v < 10 ? ('0' + v) : ('A' + v - 10));
+}
+
+static BOOL NormalizeEmail(const WCHAR* in, char* out, int cap) {
+    if (!in || !out || cap <= 1) return FALSE;
+    int start = 0;
+    while (in[start] == L' ' || in[start] == L'\t') ++start;
+    int end = start;
+    while (in[end]) ++end;
+    while (end > start && (in[end - 1] == L' ' || in[end - 1] == L'\t' || in[end - 1] == L'\r' || in[end - 1] == L'\n')) --end;
+    int j = 0;
+    for (int i = start; i < end && j < cap - 1; ++i) {
+        WCHAR c = in[i];
+        if (c >= L'A' && c <= L'Z') c = (WCHAR)(c + 32);
+        if (c > 0 && c < 128) out[j++] = (char)c;
+    }
+    out[j] = 0;
+    return j >= 3;
+}
+
+static BOOL NormalizeKey(const WCHAR* in, char* out, int cap) {
+    if (!in || !out || cap <= 1) return FALSE;
+    int i = 0;
+    if ((in[0] == L'V' || in[0] == L'v') && in[1] == L'8' && (in[2] == L'K' || in[2] == L'k')) {
+        i = 3;
+    }
+    int j = 0;
+    for (; in[i] && j < cap - 1; ++i) {
+        WCHAR c = in[i];
+        if (c >= L'a' && c <= L'f') c = (WCHAR)(c - 32);
+        if ((c >= L'0' && c <= L'9') || (c >= L'A' && c <= L'F')) out[j++] = (char)c;
+    }
+    out[j] = 0;
+    return j >= 32;
+}
+
+static BOOL ValidateLicenseKey(const WCHAR* emailW, const WCHAR* keyW) {
+    char email[160];
+    char key[96];
+    if (!NormalizeEmail(emailW, email, sizeof(email))) return FALSE;
+    if (!NormalizeKey(keyW, key, sizeof(key))) return FALSE;
+    char message[256];
+    int n = 0;
+    while (email[n] && n < 150) {
+        message[n] = email[n];
+        ++n;
+    }
+    const char* suffix = "|Virtual8K|Pro|Offline";
+    for (int i = 0; suffix[i] && n < (int)sizeof(message) - 1; ++i) message[n++] = suffix[i];
+    message[n] = 0;
+    BYTE digest[32];
+    HmacSha256(g_licenseSecret, sizeof(g_licenseSecret), (BYTE*)message, n, digest);
+    char expected[65];
+    for (int i = 0; i < 32; ++i) {
+        expected[i * 2] = HexNibble((digest[i] >> 4) & 15);
+        expected[i * 2 + 1] = HexNibble(digest[i] & 15);
+    }
+    expected[64] = 0;
+    for (int i = 0; i < 32; ++i) {
+        if (key[i] != expected[i]) return FALSE;
+    }
+    return TRUE;
+}
+
+static BOOL SaveProtectedRecord(const WCHAR* value, const BYTE* data, DWORD bytes) {
+    BYTE protectedBytes[2048];
+    DWORD protectedLen = sizeof(protectedBytes);
+    if (!ProtectBytes(data, bytes, protectedBytes, &protectedLen)) return FALSE;
+    return RegWriteBinary(value, protectedBytes, protectedLen);
+}
+
+static BOOL LoadProtectedRecord(const WCHAR* value, BYTE* data, DWORD* bytes) {
+    BYTE protectedBytes[2048];
+    DWORD protectedLen = sizeof(protectedBytes);
+    if (!RegReadBinary(value, protectedBytes, &protectedLen)) return FALSE;
+    return UnprotectBytes(protectedBytes, protectedLen, data, bytes);
+}
+
+static void LoadLicenseState() {
+    g_license.pro = FALSE;
+    g_license.trialOk = FALSE;
+    g_license.tampered = FALSE;
+    g_license.daysLeft = 0;
+    g_license.email[0] = 0;
+    g_license.key[0] = 0;
+    CopyW(g_license.status, 160, L"Trial initializing");
+
+    LicenseRecord lic;
+    DWORD licBytes = sizeof(lic);
+    if (LoadProtectedRecord(V8K_LICENSE_VALUE, (BYTE*)&lic, &licBytes) && licBytes == sizeof(lic) &&
+        lic.magic == 0x4B38434C && ValidateLicenseKey(lic.email, lic.key)) {
+        g_license.pro = TRUE;
+        CopyW(g_license.email, 128, lic.email);
+        CopyW(g_license.key, 128, lic.key);
+        CopyW(g_license.status, 160, L"Pro license active");
+    }
+
+    TrialRecord tr;
+    DWORD trBytes = sizeof(tr);
+    ULONGLONG now = FtNow();
+    BOOL haveTrial = LoadProtectedRecord(V8K_TRIAL_VALUE, (BYTE*)&tr, &trBytes) && trBytes == sizeof(tr) && tr.magic == 0x4B384354;
+    if (!haveTrial) {
+        ZeroMemory(&tr, sizeof(tr));
+        tr.magic = 0x4B384354;
+        tr.version = 1;
+        ULARGE_INTEGER u;
+        u.QuadPart = now;
+        tr.firstRunUtc.dwLowDateTime = u.LowPart;
+        tr.firstRunUtc.dwHighDateTime = u.HighPart;
+        tr.lastRunUtc = tr.firstRunUtc;
+        tr.nonce = GetTickCount() ^ GetCurrentProcessId();
+        SaveProtectedRecord(V8K_TRIAL_VALUE, (BYTE*)&tr, sizeof(tr));
+    }
+
+    ULONGLONG first = FileTimeToU64(tr.firstRunUtc);
+    ULONGLONG last = FileTimeToU64(tr.lastRunUtc);
+    const ULONGLONG day100ns = 864000000000ULL;
+    const ULONGLONG fiveMin100ns = 3000000000ULL;
+    if (first > now + day100ns || now + fiveMin100ns < last) {
+        g_license.tampered = TRUE;
+        g_license.trialOk = FALSE;
+        g_license.daysLeft = 0;
+        if (!g_license.pro) CopyW(g_license.status, 160, L"Trial locked: system clock rollback detected");
+    } else {
+        ULONGLONG elapsedDays = (now > first) ? ((now - first) / day100ns) : 0;
+        int left = V8K_TRIAL_DAYS - (int)elapsedDays;
+        if (left < 0) left = 0;
+        g_license.daysLeft = left;
+        g_license.trialOk = left > 0;
+        if (!g_license.pro) {
+            if (g_license.trialOk) {
+                swprintf(g_license.status, 160, L"Trial active: %d days left", g_license.daysLeft);
+            } else {
+                CopyW(g_license.status, 160, L"Trial expired");
+            }
+        }
+        if (now > last) {
+            ULARGE_INTEGER u;
+            u.QuadPart = now;
+            tr.lastRunUtc.dwLowDateTime = u.LowPart;
+            tr.lastRunUtc.dwHighDateTime = u.HighPart;
+            SaveProtectedRecord(V8K_TRIAL_VALUE, (BYTE*)&tr, sizeof(tr));
+        }
+    }
+}
+
+static BOOL LicenseAllowsEngine() {
+    return g_license.pro || g_license.trialOk;
+}
+
+static BOOL ActivateLicenseFromUi() {
+    WCHAR email[128];
+    WCHAR key[128];
+    GetWindowTextW(g_hEmailEdit, email, 128);
+    GetWindowTextW(g_hKeyEdit, key, 128);
+    if (!ValidateLicenseKey(email, key)) {
+        CopyW(g_license.status, 160, L"Invalid offline license key");
+        return FALSE;
+    }
+    LicenseRecord rec;
+    ZeroMemory(&rec, sizeof(rec));
+    rec.magic = 0x4B38434C;
+    rec.version = 1;
+    CopyW(rec.email, 128, email);
+    CopyW(rec.key, 128, key);
+    if (!SaveProtectedRecord(V8K_LICENSE_VALUE, (BYTE*)&rec, sizeof(rec))) {
+        CopyW(g_license.status, 160, L"License valid, but secure storage failed");
+        return FALSE;
+    }
+    g_license.pro = TRUE;
+    CopyW(g_license.email, 128, email);
+    CopyW(g_license.key, 128, key);
+    CopyW(g_license.status, 160, L"Pro license active");
+    return TRUE;
+}
+
+static int GcdI(int a, int b) {
+    if (a < 0) a = -a;
+    if (b < 0) b = -b;
+    while (b) {
+        int t = a % b;
+        a = b;
+        b = t;
+    }
+    return a ? a : 1;
+}
+
+static BOOL CALLBACK MonitorEnumProc(HMONITOR mon, HDC, LPRECT, LPARAM) {
+    MONITORINFOEXW mi;
+    ZeroMemory(&mi, sizeof(mi));
+    mi.cbSize = sizeof(mi);
+    if (!GetMonitorInfoW(mon, &mi)) return TRUE;
+    if (!(mi.dwFlags & MONITORINFOF_PRIMARY)) return TRUE;
+    CopyW(g_hw.monitorDevice, 64, mi.szDevice);
+    CopyW(g_hw.monitorName, 64, mi.szDevice);
+    DEVMODEW dm;
+    ZeroMemory(&dm, sizeof(dm));
+    dm.dmSize = sizeof(dm);
+    if (EnumDisplaySettingsExW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm, 0)) {
+        g_hw.width = (int)dm.dmPelsWidth;
+        g_hw.height = (int)dm.dmPelsHeight;
+        g_hw.bpp = (int)dm.dmBitsPerPel;
+        g_hw.refreshHz = dm.dmDisplayFrequency ? (double)dm.dmDisplayFrequency : 60.0;
+    }
+    HDC dc = CreateDCW(mi.szDevice, 0, 0, 0);
+    if (dc) {
+        g_hw.physicalWidthMm = GetDeviceCaps(dc, HORZSIZE);
+        g_hw.physicalHeightMm = GetDeviceCaps(dc, VERTSIZE);
+        DeleteDC(dc);
+    }
+    return FALSE;
+}
+
+static void DetectDisplayConfigClock() {
+    return;
+}
+
+static void DetectDxgiAndD3d() {
+    static const GUID IID_IDXGIFactory1_V8K = {0x770aae78,0xf26f,0x4dba,{0xa8,0x29,0x25,0x3c,0x83,0xd1,0xb3,0x87}};
+    HMODULE dxgi = LoadLibraryW(L"dxgi.dll");
+    PFN_CreateDXGIFactory1 CreateDXGIFactory1_p = dxgi ? (PFN_CreateDXGIFactory1)GetProcAddress(dxgi, "CreateDXGIFactory1") : 0;
+    if (!CreateDXGIFactory1_p) {
+        CopyW(g_hw.gpuName, 160, L"DXGI runtime unavailable");
+        return;
+    }
+    IDXGIFactory1* factory = 0;
+    HRESULT hr = CreateDXGIFactory1_p(IID_IDXGIFactory1_V8K, (void**)&factory);
+    if (FAILED(hr) || !factory) {
+        CopyW(g_hw.gpuName, 160, L"DXGI unavailable");
+        return;
+    }
+    IDXGIAdapter1* adapter = 0;
+    for (UINT i = 0; factory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) {
+        DXGI_ADAPTER_DESC1 desc;
+        ZeroMemory(&desc, sizeof(desc));
+        adapter->GetDesc1(&desc);
+        if (!(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)) {
+            CopyW(g_hw.gpuName, 160, desc.Description);
+            if (desc.VendorId == 0x10DE) CopyW(g_hw.gpuVendor, 40, L"NVIDIA");
+            else if (desc.VendorId == 0x1002 || desc.VendorId == 0x1022) CopyW(g_hw.gpuVendor, 40, L"AMD");
+            else if (desc.VendorId == 0x8086) CopyW(g_hw.gpuVendor, 40, L"Intel");
+            else CopyW(g_hw.gpuVendor, 40, L"DXGI");
+            IDXGIOutput* output = 0;
+            for (UINT o = 0; adapter->EnumOutputs(o, &output) != DXGI_ERROR_NOT_FOUND; ++o) {
+                DXGI_OUTPUT_DESC od;
+                ZeroMemory(&od, sizeof(od));
+                output->GetDesc(&od);
+                if (lstrcmpiW(od.DeviceName, g_hw.monitorDevice) == 0) {
+                    UINT count = 0;
+                    output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &count, 0);
+                    if (count > 0 && count <= 512) {
+                        DXGI_MODE_DESC modes[512];
+                        UINT cap = count;
+                        if (SUCCEEDED(output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &cap, modes))) {
+                            double best = 0.0;
+                            for (UINT k = 0; k < cap; ++k) {
+                                if ((int)modes[k].Width == g_hw.width && (int)modes[k].Height == g_hw.height &&
+                                    modes[k].RefreshRate.Denominator) {
+                                    double r = (double)modes[k].RefreshRate.Numerator / (double)modes[k].RefreshRate.Denominator;
+                                    if (fabs(r - g_hw.refreshHz) < fabs(best - g_hw.refreshHz) || best == 0.0) best = r;
+                                }
+                            }
+                            if (best > 1.0) g_hw.refreshHz = best;
+                        }
+                    }
+                }
+                output->Release();
+            }
+            adapter->Release();
+            break;
+        }
+        adapter->Release();
+        adapter = 0;
+    }
+    factory->Release();
+
+    D3D_FEATURE_LEVEL levels[] = {
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0
+    };
+    ID3D11Device* dev = 0;
+    ID3D11DeviceContext* ctx = 0;
+    D3D_FEATURE_LEVEL fl;
+    HMODULE d3d11 = LoadLibraryW(L"d3d11.dll");
+    PFN_D3D11CreateDevice D3D11CreateDevice_p = d3d11 ? (PFN_D3D11CreateDevice)GetProcAddress(d3d11, "D3D11CreateDevice") : 0;
+    hr = D3D11CreateDevice_p ? D3D11CreateDevice_p(0, D3D_DRIVER_TYPE_HARDWARE, 0, 0, levels, 3, D3D11_SDK_VERSION, &dev, &fl, &ctx) : E_FAIL;
+    g_hw.d3dReady = SUCCEEDED(hr);
+    if (ctx) ctx->Release();
+    if (dev) dev->Release();
+}
+
+static void DetectRawMouse() {
+    UINT count = 0;
+    GetRawInputDeviceList(0, &count, sizeof(RAWINPUTDEVICELIST));
+    if (!count || count > 64) return;
+    RAWINPUTDEVICELIST list[64];
+    UINT cap = count;
+    if (GetRawInputDeviceList(list, &cap, sizeof(RAWINPUTDEVICELIST)) == (UINT)-1) return;
+    int mice = 0;
+    for (UINT i = 0; i < cap; ++i) {
+        if (list[i].dwType != RIM_TYPEMOUSE) continue;
+        ++mice;
+        if (g_hw.mouseName[0] == 0) {
+            UINT chars = 255;
+            GetRawInputDeviceInfoW(list[i].hDevice, RIDI_DEVICENAME, g_hw.mouseName, &chars);
+        }
+    }
+    g_hw.mouseCount = mice;
+    if (!g_hw.mouseName[0]) CopyW(g_hw.mouseName, 256, L"No raw mouse enumerated");
+}
+
+static void RefreshPointerInfo() {
+    int params[3] = {0, 0, 0};
+    int speed = 10;
+    SystemParametersInfoW(SPI_GETMOUSE, 0, params, 0);
+    SystemParametersInfoW(SPI_GETMOUSESPEED, 0, &speed, 0);
+    g_pointer.speed = speed;
+    g_pointer.threshold1 = params[0];
+    g_pointer.threshold2 = params[1];
+    g_pointer.acceleration = params[2];
+}
+
+static void DetectHardware() {
+    ZeroMemory(&g_hw, sizeof(g_hw));
+    g_hw.width = GetSystemMetrics(SM_CXSCREEN);
+    g_hw.height = GetSystemMetrics(SM_CYSCREEN);
+    g_hw.bpp = 32;
+    g_hw.refreshHz = 60.0;
+    CopyW(g_hw.monitorName, 64, L"Primary monitor");
+    CopyW(g_hw.gpuName, 160, L"Unknown GPU");
+    CopyW(g_hw.gpuVendor, 40, L"Unknown");
+    EnumDisplayMonitors(0, 0, MonitorEnumProc, 0);
+    DetectDisplayConfigClock();
+    DetectDxgiAndD3d();
+    DetectRawMouse();
+    RefreshPointerInfo();
+    if (g_hw.pixelClockMHz <= 0.0) {
+        g_hw.pixelClockMHz = (double)g_hw.width * (double)g_hw.height * g_hw.refreshHz / 1000000.0;
+    }
+    if (g_hw.physicalWidthMm > 0 && g_hw.width > 0) {
+        g_hw.metersPerPixel = ((double)g_hw.physicalWidthMm / 1000.0) / (double)g_hw.width;
+    } else {
+        g_hw.metersPerPixel = 0.000264583333;
+    }
+    if (g_dwm.DwmIsCompositionEnabled_p) {
+        BOOL enabled = FALSE;
+        if (SUCCEEDED(g_dwm.DwmIsCompositionEnabled_p(&enabled))) g_hw.dwmComposition = enabled;
+    }
+    swprintf(g_hw.syncStatus, 160, L"DWM %s, D3D11 %s", g_hw.dwmComposition ? L"composition active" : L"composition unavailable", g_hw.d3dReady ? L"ready" : L"fallback");
+    CopyW(g_hw.mpoStatus, 96, L"Hardware composition: DXGI/DWM guarded");
+}
+
+static void ApplyPerformanceMode() {
+    if (InterlockedCompareExchange(&g_settings.highPerformance, 0, 0)) {
+        SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+        if (g_engineThread) SetThreadPriority(g_engineThread, THREAD_PRIORITY_TIME_CRITICAL);
+        if (g_nt.NtSetTimerResolution_p) {
+            ULONG actual = 0;
+            g_nt.NtSetTimerResolution_p(2500, TRUE, &actual);
+        }
+    } else {
+        SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+        if (g_engineThread) SetThreadPriority(g_engineThread, THREAD_PRIORITY_ABOVE_NORMAL);
+        if (g_nt.NtSetTimerResolution_p) {
+            ULONG actual = 0;
+            g_nt.NtSetTimerResolution_p(2500, FALSE, &actual);
+        }
+    }
+}
+
+static BOOL RegisterRawMouse(HWND hwnd) {
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+    rid.dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
+    if (InterlockedCompareExchange(&g_settings.aggressiveRaw, 0, 0)) {
+        rid.dwFlags |= RIDEV_NOLEGACY;
+    }
+    rid.hwndTarget = hwnd;
+    BOOL ok = RegisterRawInputDevices(&rid, 1, sizeof(rid));
+    InterlockedExchange(&g_rawRegistered, ok ? 1 : 0);
+    if (!ok) SetWarning(L"Raw input registration failed");
+    else if (InterlockedCompareExchange(&g_settings.aggressiveRaw, 0, 0)) {
+        SetWarning(L"Agresif raw: legacy tiklama devre disi kalabilir");
+    }
+    return ok;
+}
+
+static void ReregisterRawMouse() {
+    if (g_rawHwnd) RegisterRawMouse(g_rawHwnd);
+}
+
+static void UnregisterRawMouse() {
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+    rid.dwFlags = RIDEV_REMOVE;
+    rid.hwndTarget = 0;
+    RegisterRawInputDevices(&rid, 1, sizeof(rid));
+    InterlockedExchange(&g_rawRegistered, 0);
+}
+
+static BOOL QueuePush(const RawMove& mv) {
+    LONG head = g_queueHead;
+    LONG next = (head + 1) & V8K_QUEUE_MASK;
+    if (next == g_queueTail) {
+        InterlockedExchange(&g_queueTail, (g_queueTail + 1) & V8K_QUEUE_MASK);
+        InterlockedIncrement(&g_stats.droppedEvents);
+        SetWarning(L"Low-latency catch-up: stale raw packet dropped");
+    }
+    g_queue[head] = mv;
+    MemoryBarrier();
+    InterlockedExchange(&g_queueHead, next);
+    SetEvent(g_rawEvent);
+    return TRUE;
+}
+
+static BOOL QueuePop(RawMove* mv) {
+    LONG tail = g_queueTail;
+    if (tail == g_queueHead) return FALSE;
+    *mv = g_queue[tail];
+    MemoryBarrier();
+    InterlockedExchange(&g_queueTail, (tail + 1) & V8K_QUEUE_MASK);
+    return TRUE;
+}
+
+static int QueueDepth() {
+    LONG head = g_queueHead;
+    LONG tail = g_queueTail;
+    return (head - tail) & V8K_QUEUE_MASK;
+}
+
+static void QueueClear() {
+    InterlockedExchange(&g_queueTail, g_queueHead);
+}
+
+static BOOL QueueCoalesceLatest(RawMove* mv, int* mergedCount) {
+    RawMove cur;
+    if (!QueuePop(&cur)) return FALSE;
+    int count = 1;
+    LONG sx = cur.dx;
+    LONG sy = cur.dy;
+    RawMove first = cur;
+    while (QueuePop(&cur)) {
+        sx += cur.dx;
+        sy += cur.dy;
+        ++count;
+        if (count >= 64) break;
+    }
+    first.dx = sx;
+    first.dy = sy;
+    *mv = first;
+    if (mergedCount) *mergedCount = count;
+    if (count > 1) InterlockedExchangeAdd(&g_stats.coalescedEvents, count - 1);
+    return TRUE;
+}
+
+static BOOL ShouldSkipRaw(HANDLE device, const LARGE_INTEGER& now) {
+    if (device != 0) {
+        if (g_lastInjectQpc.QuadPart && QpcElapsedUs(g_lastInjectQpc, now) > V8K_SKIP_RAW_WINDOW_US) {
+            InterlockedExchange(&g_SkipNextRaw, 0);
+        }
+        return FALSE;
+    }
+    LONG skip = InterlockedCompareExchange(&g_SkipNextRaw, 0, 0);
+    if (skip > 0) {
+        double age = QpcElapsedUs(g_lastInjectQpc, now);
+        if (age >= 0.0 && age < V8K_SKIP_RAW_WINDOW_US) {
+            InterlockedDecrement(&g_SkipNextRaw);
+            return TRUE;
+        }
+        InterlockedExchange(&g_SkipNextRaw, 0);
+    }
+    return InterlockedCompareExchange(&g_Injecting, 0, 0) != 0;
+}
+
+static void UpdateRawStats(LONG dx, LONG dy, const LARGE_INTEGER& now) {
+    InterlockedIncrement(&g_stats.rawEvents);
+    if (g_lastPhysicalQpc.QuadPart != 0) {
+        double dtUs = QpcElapsedUs(g_lastPhysicalQpc, now);
+        if (dtUs > 1.0 && dtUs < 100000.0) {
+            if (g_stats.rawPeriodMinUs <= 0.0 || dtUs < g_stats.rawPeriodMinUs) g_stats.rawPeriodMinUs = dtUs;
+            else g_stats.rawPeriodMinUs = g_stats.rawPeriodMinUs * 0.98 + dtUs * 0.02;
+            if (dtUs > g_stats.rawPeriodMaxUs) g_stats.rawPeriodMaxUs = dtUs;
+            else g_stats.rawPeriodMaxUs = g_stats.rawPeriodMaxUs * 0.90 + dtUs * 0.10;
+            if (g_stats.rawPeriodAvgUs <= 0.0) g_stats.rawPeriodAvgUs = dtUs;
+            else g_stats.rawPeriodAvgUs = g_stats.rawPeriodAvgUs * 0.70 + dtUs * 0.30;
+            double hz = 1000000.0 / dtUs;
+            if (g_stats.physicalHz <= 0.0) g_stats.physicalHz = hz;
+            else g_stats.physicalHz = g_stats.physicalHz * 0.70 + hz * 0.30;
+            g_stats.virtualHz = g_stats.physicalHz * (double)ComputeMicroSteps(g_stats.physicalHz);
+            int mag = abs((int)dx) + abs((int)dy);
+            if (mag > 0) {
+                double pixels = (mag > 3) ? sqrt((double)dx * (double)dx + (double)dy * (double)dy) : (double)mag;
+                double meters = pixels * g_hw.metersPerPixel;
+                double speed = meters / (dtUs / 1000000.0);
+                g_stats.speedMetersPerSec = g_stats.speedMetersPerSec * 0.70 + speed * 0.30;
+                if ((g_stats.rawEvents & 3) == 0) {
+                    g_stats.graph[g_stats.graphHead] = ClampD(g_stats.speedMetersPerSec, 0.0, 5.0);
+                    g_stats.graphHead = (g_stats.graphHead + 1) % V8K_GRAPH_SAMPLES;
+                }
+            }
+        }
+    }
+    g_lastPhysicalQpc = now;
+}
+
+static void UpdateMouseDeviceName(HANDLE device) {
+    if (!device) return;
+    UINT chars = 255;
+    WCHAR name[256];
+    name[0] = 0;
+    if (GetRawInputDeviceInfoW(device, RIDI_DEVICENAME, name, &chars) != (UINT)-1 && name[0]) {
+        CopyW(g_hw.mouseName, 256, name);
+    }
+}
+
+static void UpdateMotionState(LONG dx, LONG dy, double dtUs) {
+    if (dtUs < 1.0 || dtUs > 100000.0) return;
+    double invSec = 1000000.0 / dtUs;
+    double vx = (double)dx * invSec;
+    double vy = (double)dy * invSec;
+    g_motion.velX = g_motion.velX * 0.65 + vx * 0.35;
+    g_motion.velY = g_motion.velY * 0.65 + vy * 0.35;
+    double newSpeed = sqrt(g_motion.velX * g_motion.velX + g_motion.velY * g_motion.velY);
+    g_motion.accel = (newSpeed - g_motion.speed) * invSec;
+    g_motion.speed = g_motion.speed * 0.70 + newSpeed * 0.30;
+    int mag = abs((int)dx) + abs((int)dy);
+    g_motion.flick = (mag >= 12 || g_motion.speed > 18000.0 || g_motion.accel > 400000.0) ? 1 : 0;
+}
+
+static void ProcessRawInput(LPARAM lParam) {
+    UINT size = 0;
+    GetRawInputData((HRAWINPUT)lParam, RID_INPUT, 0, &size, sizeof(RAWINPUTHEADER));
+    if (!size || size > 512) return;
+    BYTE buffer[512];
+    if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer, &size, sizeof(RAWINPUTHEADER)) != size) return;
+    RAWINPUT* raw = (RAWINPUT*)buffer;
+    if (raw->header.dwType != RIM_TYPEMOUSE) return;
+    RAWMOUSE* mouse = &raw->data.mouse;
+    if (mouse->ulExtraInformation == V8K_EXTRA_INFO) return;
+    if (mouse->usFlags & MOUSE_MOVE_ABSOLUTE) return;
+    LONG dx = mouse->lLastX;
+    LONG dy = mouse->lLastY;
+    if (dx == 0 && dy == 0) return;
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    if (ShouldSkipRaw(raw->header.hDevice, now)) return;
+    double dtUs = 0.0;
+    if (g_lastPhysicalQpc.QuadPart) dtUs = QpcElapsedUs(g_lastPhysicalQpc, now);
+    UpdateRawStats(dx, dy, now);
+    UpdateMotionState(dx, dy, dtUs);
+    if (raw->header.hDevice != g_lastNamedDevice) {
+        g_lastNamedDevice = raw->header.hDevice;
+        UpdateMouseDeviceName(raw->header.hDevice);
+    }
+    if (InterlockedCompareExchange(&g_stats.safeMode, 0, 0) && LicenseAllowsEngine()) {
+        InterlockedExchange(&g_stats.safeMode, 0);
+        SetWarning(L"Recovered from idle safe mode");
+    }
+    if (!InterlockedCompareExchange(&g_settings.enabled, 0, 0) || !LicenseAllowsEngine()) return;
+    if (InterlockedCompareExchange(&g_stats.safeMode, 0, 0)) return;
+    RawMove mv;
+    mv.dx = dx;
+    mv.dy = dy;
+    mv.qpc = now;
+    mv.device = raw->header.hDevice;
+    QueuePush(mv);
+}
+
+static LRESULT CALLBACK RawWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
+    switch (msg) {
+    case WM_CREATE:
+        if (!RegisterRawMouse(hwnd)) SetWarning(L"Safe mode: raw input registration failed");
+        if (g_rawReady) SetEvent(g_rawReady);
+        return 0;
+    case WM_INPUT:
+        ProcessRawInput(lp);
+        return 0;
+    case WM_INPUT_DEVICE_CHANGE:
+        DetectRawMouse();
+        return 0;
+    case WM_DESTROY:
+        UnregisterRawMouse();
+        g_rawHwnd = 0;
+        return 0;
+    }
+    return DefWindowProcW(hwnd, msg, wp, lp);
+}
+
+static DWORD WINAPI RawThreadProc(void*) {
+    g_rawThreadId = GetCurrentThreadId();
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+    WNDCLASSEXW wc;
+    ZeroMemory(&wc, sizeof(wc));
+    wc.cbSize = sizeof(wc);
+    wc.lpfnWndProc = RawWndProc;
+    wc.hInstance = g_hInst;
+    wc.lpszClassName = V8K_RAW_CLASS_NAME;
+    RegisterClassExW(&wc);
+    g_rawHwnd = CreateWindowExW(0, V8K_RAW_CLASS_NAME, L"Virtual8KRaw", 0, 0, 0, 0, 0, HWND_MESSAGE, 0, g_hInst, 0);
+    if (!g_rawHwnd && g_rawReady) SetEvent(g_rawReady);
+    MSG msg;
+    while (GetMessageW(&msg, 0, 0, 0) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+    if (g_rawHwnd) {
+        DestroyWindow(g_rawHwnd);
+        g_rawHwnd = 0;
+    }
+    return 0;
+}
+
+static void UpdateM1HookLatency(const MSLLHOOKSTRUCT* ms);
+
+static LRESULT CALLBACK LowLevelMouseProc(int code, WPARAM wp, LPARAM lp) {
+    if (code == HC_ACTION && wp == WM_LBUTTONDOWN) {
+        UpdateM1HookLatency((MSLLHOOKSTRUCT*)lp);
+    }
+    return CallNextHookEx(g_mouseHook, code, wp, lp);
+}
+
+static DWORD WINAPI HookThreadProc(void*) {
+    g_hookThreadId = GetCurrentThreadId();
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+    MSG msg;
+    PeekMessageW(&msg, 0, WM_USER, WM_USER, PM_NOREMOVE);
+    g_mouseHook = SetWindowsHookExW(WH_MOUSE_LL, LowLevelMouseProc, g_hInst, 0);
+    InterlockedExchange(&g_hookOk, g_mouseHook ? 1 : 0);
+    if (g_hookReady) SetEvent(g_hookReady);
+    while (GetMessageW(&msg, 0, 0, 0) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+    if (g_mouseHook) {
+        UnhookWindowsHookEx(g_mouseHook);
+        g_mouseHook = 0;
+    }
+    return 0;
+}
+
+static double CatmullHermite(double p0, double p1, double p2, double p3, double t, double tension) {
+    double s = ClampD(1.0 - tension, 0.0, 1.0);
+    double m1 = (p2 - p0) * 0.5 * s;
+    double m2 = (p3 - p1) * 0.5 * s;
+    double t2 = t * t;
+    double t3 = t2 * t;
+    double h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
+    double h10 = t3 - 2.0 * t2 + t;
+    double h01 = -2.0 * t3 + 3.0 * t2;
+    double h11 = t3 - t2;
+    return h00 * p1 + h10 * m1 + h01 * p2 + h11 * m2;
+}
+
+static double KalmanUpdate(Kalman1D* k, double z, double q, double r) {
+    if (!k->initialized) {
+        k->x = z;
+        k->p = 1.0;
+        k->initialized = 1;
+        return z;
+    }
+    k->p += q;
+    double gain = k->p / (k->p + r);
+    k->x += gain * (z - k->x);
+    k->p *= (1.0 - gain);
+    return k->x;
+}
+
+static void WaitUntilQpc(LARGE_INTEGER target) {
+    for (;;) {
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        LONGLONG remain = target.QuadPart - now.QuadPart;
+        if (remain <= 0) return;
+        double us = (double)remain * 1000000.0 / (double)g_qpcFreq.QuadPart;
+        if (!InterlockedCompareExchange(&g_settings.highPerformance, 0, 0)) {
+            if (us > 150.0) Sleep(0);
+        } else {
+            if (us > 500.0) Sleep(0);
+            else YieldProcessor();
+        }
+    }
+}
+
+static int PixelToAbsX(int x) {
+    int vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    if (vw <= 1) vw = 1;
+    return (int)(((LONGLONG)(x - vx) * 65535LL) / (vw - 1));
+}
+
+static int PixelToAbsY(int y) {
+    int vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+    if (vh <= 1) vh = 1;
+    return (int)(((LONGLONG)(y - vy) * 65535LL) / (vh - 1));
+}
+
+static BOOL InjectRelativeMove(int dx, int dy) {
+    if (dx == 0 && dy == 0) return TRUE;
+    INPUT input;
+    ZeroMemory(&input, sizeof(input));
+    input.type = INPUT_MOUSE;
+    input.mi.dx = dx;
+    input.mi.dy = dy;
+    input.mi.dwFlags = MOUSEEVENTF_MOVE;
+    if (InterlockedCompareExchange(&g_settings.testMode, 0, 0)) {
+        input.mi.dwFlags |= MOUSEEVENTF_MOVE_NOCOALESCE;
+    }
+    input.mi.dwExtraInfo = V8K_EXTRA_INFO;
+    LARGE_INTEGER inj;
+    QueryPerformanceCounter(&inj);
+    g_lastInjectQpc = inj;
+    InterlockedExchangeAdd(&g_SkipNextRaw, 1);
+    InterlockedExchange(&g_Injecting, 1);
+    UINT sent = SendInput(1, &input, sizeof(INPUT));
+    InterlockedExchange(&g_Injecting, 0);
+    if (sent == 1) {
+        InterlockedIncrement(&g_stats.injectedEvents);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static BOOL InjectRelativeBatch(const int* dx, const int* dy, int count) {
+    if (!dx || !dy || count <= 0) return TRUE;
+    if (count > V8K_MAX_MICRO_STEPS) count = V8K_MAX_MICRO_STEPS;
+    INPUT inputs[V8K_MAX_MICRO_STEPS];
+    int n = 0;
+    for (int i = 0; i < count; ++i) {
+        if (dx[i] == 0 && dy[i] == 0) continue;
+        ZeroMemory(&inputs[n], sizeof(INPUT));
+        inputs[n].type = INPUT_MOUSE;
+        inputs[n].mi.dx = dx[i];
+        inputs[n].mi.dy = dy[i];
+        inputs[n].mi.dwFlags = MOUSEEVENTF_MOVE;
+        if (InterlockedCompareExchange(&g_settings.testMode, 0, 0)) {
+            inputs[n].mi.dwFlags |= MOUSEEVENTF_MOVE_NOCOALESCE;
+        }
+        inputs[n].mi.dwExtraInfo = V8K_EXTRA_INFO;
+        ++n;
+    }
+    if (n <= 0) return TRUE;
+    LARGE_INTEGER inj;
+    QueryPerformanceCounter(&inj);
+    g_lastInjectQpc = inj;
+    InterlockedExchangeAdd(&g_SkipNextRaw, (LONG)n);
+    InterlockedExchange(&g_Injecting, 1);
+    UINT sent = SendInput((UINT)n, inputs, sizeof(INPUT));
+    InterlockedExchange(&g_Injecting, 0);
+    if (sent == (UINT)n) {
+        InterlockedExchangeAdd(&g_stats.injectedEvents, n);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static void UpdateLatency(double latencyUs) {
+    latencyUs = ClampD(latencyUs, 0.0, 50000.0);
+    if (g_stats.latencyMinUs <= 0.0 || latencyUs < g_stats.latencyMinUs) g_stats.latencyMinUs = latencyUs;
+    else g_stats.latencyMinUs = g_stats.latencyMinUs * 0.995 + latencyUs * 0.005;
+    if (latencyUs > g_stats.latencyMaxUs) g_stats.latencyMaxUs = latencyUs;
+    else g_stats.latencyMaxUs = g_stats.latencyMaxUs * 0.96 + latencyUs * 0.04;
+    if (g_stats.latencyAvgUs <= 0.0) g_stats.latencyAvgUs = latencyUs;
+    else g_stats.latencyAvgUs = g_stats.latencyAvgUs * 0.75 + latencyUs * 0.25;
+}
+
+static void UpdateM1HookLatency(const MSLLHOOKSTRUCT* ms) {
+    if (!ms) return;
+    DWORD nowMs = GetTickCount();
+    DWORD ageMs = nowMs - ms->time;
+    double us = (double)ageMs * 1000.0;
+    if (us < 0.0 || us > 200000.0) us = 0.0;
+    if (g_stats.m1HookLatencyUs <= 0.0) g_stats.m1HookLatencyUs = us;
+    else g_stats.m1HookLatencyUs = g_stats.m1HookLatencyUs * 0.70 + us * 0.30;
+    QueryPerformanceCounter(&g_lastM1HookQpc);
+    InterlockedIncrement(&g_stats.m1Events);
+}
+
+static void UpdateM1WindowLatency() {
+    if (!g_lastM1HookQpc.QuadPart) return;
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    double us = QpcElapsedUs(g_lastM1HookQpc, now);
+    if (us < 0.0 || us > 200000.0) return;
+    if (g_stats.m1WindowLatencyUs <= 0.0) g_stats.m1WindowLatencyUs = us;
+    else g_stats.m1WindowLatencyUs = g_stats.m1WindowLatencyUs * 0.70 + us * 0.30;
+}
+
+static void ProcessInterpolatedMove(const RawMove& mv) {
+    static int seeded = 0;
+    static double p0x = 0.0, p0y = 0.0;
+    static double p1x = 0.0, p1y = 0.0;
+    static Kalman1D kx = {0.0, 1.0, 0};
+    static Kalman1D ky = {0.0, 1.0, 0};
+
+    if (!LicenseAllowsEngine()) return;
+    if (!seeded) {
+        p0x = p1x = 0.0;
+        p0y = p1y = 0.0;
+        kx.initialized = 0;
+        ky.initialized = 0;
+        seeded = 1;
+    }
+
+    LARGE_INTEGER preStart;
+    QueryPerformanceCounter(&preStart);
+    double inputAgeUs = QpcElapsedUs(mv.qpc, preStart);
+    g_stats.engineAgeUs = g_stats.engineAgeUs <= 0.0 ? inputAgeUs : g_stats.engineAgeUs * 0.80 + inputAgeUs * 0.20;
+    int backlog = QueueDepth();
+    int motionMag = abs((int)mv.dx) + abs((int)mv.dy);
+    BOOL highPerf = InterlockedCompareExchange(&g_settings.highPerformance, 0, 0) != 0;
+    int steps = ComputeMicroSteps(g_stats.physicalHz);
+    double catchupAgeUs = V8K_STALE_INPUT_US;
+    if (g_motion.flick) catchupAgeUs *= 0.55;
+    if (inputAgeUs > catchupAgeUs || backlog >= V8K_BACKLOG_CATCHUP_DEPTH) {
+        steps = 1;
+    } else if (g_motion.flick || motionMag >= 14) {
+        steps = 1;
+    } else if (highPerf && (motionMag >= 4 || g_motion.speed > 8000.0) && steps > 2) {
+        steps = 2;
+    }
+    g_stats.gpuPercent *= 0.95;
+
+    double p2x = p1x + (double)mv.dx;
+    double p2y = p1y + (double)mv.dy;
+    double q = ClampD(g_settings.kalmanQ, 0.00001, 1.0);
+    double r = ClampD(g_settings.kalmanR, 0.00001, 10.0);
+
+    if (steps <= 1) {
+        KalmanUpdate(&kx, p2x, q, r);
+        KalmanUpdate(&ky, p2y, q, r);
+        InjectRelativeMove((int)mv.dx, (int)mv.dy);
+        LARGE_INTEGER end;
+        QueryPerformanceCounter(&end);
+        UpdateLatency(QpcElapsedUs(mv.qpc, end));
+        p0x = p1x;
+        p0y = p1y;
+        p1x = p2x;
+        p1y = p2y;
+        return;
+    }
+
+    double p3x = p2x + (p2x - p0x) * 0.50;
+    double p3y = p2y + (p2y - p0y) * 0.50;
+    double cumX[V8K_MAX_MICRO_STEPS + 1];
+    double cumY[V8K_MAX_MICRO_STEPS + 1];
+    cumX[0] = 0.0;
+    cumY[0] = 0.0;
+    double tension = ClampD(g_settings.splineTension, 0.0, 1.0);
+    for (int i = 1; i <= steps; ++i) {
+        double t = (double)i / (double)steps;
+        double sx = CatmullHermite(p0x, p1x, p2x, p3x, t, tension);
+        double sy = CatmullHermite(p0y, p1y, p2y, p3y, t, tension);
+        double fx = KalmanUpdate(&kx, sx, q, r);
+        double fy = KalmanUpdate(&ky, sy, q, r);
+        cumX[i] = fx - p1x;
+        cumY[i] = fy - p1y;
+    }
+    double corrX = (double)mv.dx - cumX[steps];
+    double corrY = (double)mv.dy - cumY[steps];
+    double minX = mv.dx < 0 ? (double)mv.dx - 2.0 : -2.0;
+    double maxX = mv.dx > 0 ? (double)mv.dx + 2.0 : 2.0;
+    double minY = mv.dy < 0 ? (double)mv.dy - 2.0 : -2.0;
+    double maxY = mv.dy > 0 ? (double)mv.dy + 2.0 : 2.0;
+    for (int i = 1; i <= steps; ++i) {
+        double t = (double)i / (double)steps;
+        cumX[i] = ClampD(cumX[i] + corrX * t, minX, maxX);
+        cumY[i] = ClampD(cumY[i] + corrY * t, minY, maxY);
+    }
+    cumX[steps] = (double)mv.dx;
+    cumY[steps] = (double)mv.dy;
+
+    int sdx[V8K_MAX_MICRO_STEPS];
+    int sdy[V8K_MAX_MICRO_STEPS];
+    int prevIx = 0, prevIy = 0;
+    int n = 0;
+    for (int i = 1; i <= steps; ++i) {
+        int ix = (i == steps) ? (int)mv.dx : RoundI(cumX[i]);
+        int iy = (i == steps) ? (int)mv.dy : RoundI(cumY[i]);
+        int stepDx = ix - prevIx;
+        int stepDy = iy - prevIy;
+        if (stepDx != 0 || stepDy != 0) {
+            sdx[n] = stepDx;
+            sdy[n] = stepDy;
+            ++n;
+        }
+        prevIx = ix;
+        prevIy = iy;
+    }
+
+    BOOL ecoSmooth = !highPerf && n > 1 && backlog == 0 && inputAgeUs < (V8K_STALE_INPUT_US * 0.5);
+    if (!ecoSmooth) {
+        InjectRelativeBatch(sdx, sdy, n);
+        LARGE_INTEGER end;
+        QueryPerformanceCounter(&end);
+        UpdateLatency(QpcElapsedUs(mv.qpc, end));
+    } else {
+        LARGE_INTEGER stepBase;
+        QueryPerformanceCounter(&stepBase);
+        double targetHz = ClampD(g_settings.virtualHzLimit, 1000.0, 8000.0);
+        LONGLONG stepIntervalQpc = UsToQpc(1000000.0 / targetHz);
+        DWORD testModeFlags = InterlockedCompareExchange(&g_settings.testMode, 0, 0) ? MOUSEEVENTF_MOVE_NOCOALESCE : 0;
+        BOOL latencyRecorded = FALSE;
+        for (int i = 0; i < n; ++i) {
+            if (QueueDepth() > 0) {
+                int rem = n - i;
+                InjectRelativeBatch(sdx + i, sdy + i, rem);
+                LARGE_INTEGER end;
+                QueryPerformanceCounter(&end);
+                UpdateLatency(QpcElapsedUs(mv.qpc, end));
+                latencyRecorded = TRUE;
+                break;
+            }
+            INPUT input;
+            ZeroMemory(&input, sizeof(INPUT));
+            input.type = INPUT_MOUSE;
+            input.mi.dx = sdx[i];
+            input.mi.dy = sdy[i];
+            input.mi.dwFlags = MOUSEEVENTF_MOVE | testModeFlags;
+            input.mi.dwExtraInfo = V8K_EXTRA_INFO;
+            QueryPerformanceCounter(&g_lastInjectQpc);
+            InterlockedExchangeAdd(&g_SkipNextRaw, 1);
+            InterlockedExchange(&g_Injecting, 1);
+            SendInput(1, &input, sizeof(INPUT));
+            InterlockedExchange(&g_Injecting, 0);
+            InterlockedIncrement(&g_stats.injectedEvents);
+            if (!latencyRecorded) {
+                LARGE_INTEGER firstEnd;
+                QueryPerformanceCounter(&firstEnd);
+                UpdateLatency(QpcElapsedUs(mv.qpc, firstEnd));
+                latencyRecorded = TRUE;
+            }
+            if (i + 1 < n) {
+                LARGE_INTEGER targetLI;
+                targetLI.QuadPart = stepBase.QuadPart + stepIntervalQpc * (LONGLONG)(i + 1);
+                WaitUntilQpc(targetLI);
+            }
+        }
+        if (!latencyRecorded) {
+            LARGE_INTEGER end;
+            QueryPerformanceCounter(&end);
+            UpdateLatency(QpcElapsedUs(mv.qpc, end));
+        }
+    }
+
+    p0x = p1x;
+    p0y = p1y;
+    p1x = p2x;
+    p1y = p2y;
+}
+
+static DWORD WINAPI EngineThreadProc(void*) {
+    QueryPerformanceCounter(&g_engineHeartbeatQpc);
+    ApplyPerformanceMode();
+    for (;;) {
+        if (InterlockedCompareExchange(&g_shutdown, 0, 0)) break;
+        BOOL hadWork = FALSE;
+        RawMove mv;
+        int merged = 0;
+        while (QueueCoalesceLatest(&mv, &merged)) {
+            hadWork = TRUE;
+            if (InterlockedCompareExchange(&g_shutdown, 0, 0)) break;
+            if (InterlockedCompareExchange(&g_settings.enabled, 0, 0) && LicenseAllowsEngine() &&
+                !InterlockedCompareExchange(&g_stats.safeMode, 0, 0)) {
+                if (merged > 1) {
+                    SetWarning(L"Low-latency catch-up: raw packets coalesced");
+                }
+                ProcessInterpolatedMove(mv);
+            }
+            QueryPerformanceCounter(&g_engineHeartbeatQpc);
+            merged = 0;
+        }
+        if (!hadWork) {
+            DWORD waitMs = InterlockedCompareExchange(&g_settings.highPerformance, 0, 0) ? 1 : 5;
+            WaitForSingleObject(g_rawEvent, waitMs);
+        }
+        LARGE_INTEGER hb;
+        QueryPerformanceCounter(&hb);
+        g_engineHeartbeatQpc = hb;
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        if (InterlockedCompareExchange(&g_settings.enabled, 0, 0) && LicenseAllowsEngine() &&
+            g_lastPhysicalQpc.QuadPart != 0 && QpcElapsedUs(g_lastPhysicalQpc, now) > V8K_IDLE_SAFE_US) {
+            if (!InterlockedCompareExchange(&g_stats.safeMode, 1, 0)) {
+                SetWarning(L"Safe mode: no physical mouse input for 1000 ms");
+            }
+        }
+    }
+    return 0;
+}
+
+static ULONGLONG FtToU64(FILETIME ft) {
+    ULARGE_INTEGER u;
+    u.LowPart = ft.dwLowDateTime;
+    u.HighPart = ft.dwHighDateTime;
+    return u.QuadPart;
+}
+
+static void UpdateCpuUsage() {
+    static LARGE_INTEGER lastOutputQpc = {0};
+    static LONG lastInjected = 0;
+    LARGE_INTEGER nowQpc;
+    QueryPerformanceCounter(&nowQpc);
+    if (lastOutputQpc.QuadPart) {
+        double dt = QpcElapsedUs(lastOutputQpc, nowQpc);
+        LONG curInjected = InterlockedCompareExchange(&g_stats.injectedEvents, 0, 0);
+        LONG diff = curInjected - lastInjected;
+        if (dt > 1000.0) {
+            double hz = (double)diff * 1000000.0 / dt;
+            if (g_stats.outputHzMeasured <= 0.0) g_stats.outputHzMeasured = hz;
+            else g_stats.outputHzMeasured = g_stats.outputHzMeasured * 0.70 + hz * 0.30;
+        }
+        lastInjected = curInjected;
+    }
+    lastOutputQpc = nowQpc;
+
+    FILETIME idle, kernel, user, c, e, pk, pu;
+    if (!GetSystemTimes(&idle, &kernel, &user)) return;
+    if (!GetProcessTimes(GetCurrentProcess(), &c, &e, &pk, &pu)) return;
+    CpuSample cur;
+    cur.sysIdle = FtToU64(idle);
+    cur.sysKernel = FtToU64(kernel);
+    cur.sysUser = FtToU64(user);
+    cur.procKernel = FtToU64(pk);
+    cur.procUser = FtToU64(pu);
+    cur.valid = TRUE;
+    if (g_cpuLast.valid) {
+        ULONGLONG sys = (cur.sysKernel - g_cpuLast.sysKernel) + (cur.sysUser - g_cpuLast.sysUser);
+        ULONGLONG proc = (cur.procKernel - g_cpuLast.procKernel) + (cur.procUser - g_cpuLast.procUser);
+        if (sys > 0) {
+            g_stats.cpuPercent = ClampD((double)proc * 100.0 / (double)sys, 0.0, 100.0);
+        }
+    }
+    g_cpuLast = cur;
+}
+
+static void DrawFilledRect(HDC dc, RECT rc, COLORREF color) {
+    HBRUSH b = CreateSolidBrush(color);
+    FillRect(dc, &rc, b);
+    DeleteObject(b);
+}
+
+static void DrawBorder(HDC dc, RECT rc, COLORREF color) {
+    HPEN pen = CreatePen(PS_SOLID, 1, color);
+    HGDIOBJ old = SelectObject(dc, pen);
+    MoveToEx(dc, rc.left, rc.top, 0);
+    LineTo(dc, rc.right - 1, rc.top);
+    LineTo(dc, rc.right - 1, rc.bottom - 1);
+    LineTo(dc, rc.left, rc.bottom - 1);
+    LineTo(dc, rc.left, rc.top);
+    SelectObject(dc, old);
+    DeleteObject(pen);
+}
+
+static void DrawTextIn(HDC dc, RECT rc, const WCHAR* text, COLORREF color, UINT flags) {
+    SetBkMode(dc, TRANSPARENT);
+    SetTextColor(dc, color);
+    DrawTextW(dc, text, -1, &rc, flags);
+}
+
+static void DrawMetric(HDC dc, int x, int y, int w, int h, const WCHAR* label, const WCHAR* value, COLORREF accent) {
+    RECT rc = {x, y, x + w, y + h};
+    DrawFilledRect(dc, rc, RGB(31, 34, 39));
+    DrawBorder(dc, rc, RGB(54, 59, 67));
+    RECT lab = {x + 12, y + 8, x + w - 12, y + 28};
+    RECT val = {x + 12, y + 30, x + w - 12, y + h - 8};
+    SelectObject(dc, g_font);
+    DrawTextIn(dc, lab, label, RGB(160, 168, 178), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    SelectObject(dc, g_fontBold);
+    DrawTextIn(dc, val, value, accent, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+}
+
+static void DrawButton(HDC dc, RECT rc, const WCHAR* text, BOOL active) {
+    DrawFilledRect(dc, rc, active ? RGB(38, 104, 92) : RGB(42, 47, 55));
+    DrawBorder(dc, rc, active ? RGB(73, 210, 168) : RGB(77, 85, 96));
+    SelectObject(dc, g_fontBold);
+    DrawTextIn(dc, rc, text, active ? RGB(230, 255, 248) : RGB(230, 234, 240), DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+}
+
+static void DrawTabs(HDC dc, RECT client) {
+    const WCHAR* names[] = {L"Genel", L"Gelismis", L"Donanim (Diag)", L"Testler", L"Lisans"};
+    int x = 18;
+    for (int i = 0; i < 5; ++i) {
+        RECT r = {x, 18, x + 124, 52};
+        DrawFilledRect(dc, r, i == g_activeTab ? RGB(41, 47, 56) : RGB(22, 24, 29));
+        if (i == g_activeTab) {
+            RECT line = {r.left, r.bottom - 3, r.right, r.bottom};
+            DrawFilledRect(dc, line, RGB(226, 40, 200));
+        }
+        SelectObject(dc, g_fontBold);
+        DrawTextIn(dc, r, names[i], i == g_activeTab ? RGB(245, 248, 250) : RGB(148, 156, 168), DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+        x += 130;
+    }
+    RECT sep = {0, 58, client.right, 59};
+    DrawFilledRect(dc, sep, RGB(42, 46, 53));
+}
+
+static void DrawGraph(HDC dc, RECT rc) {
+    DrawFilledRect(dc, rc, RGB(24, 27, 32));
+    DrawBorder(dc, rc, RGB(54, 59, 67));
+    HPEN grid = CreatePen(PS_SOLID, 1, RGB(35, 39, 46));
+    HGDIOBJ old = SelectObject(dc, grid);
+    for (int i = 1; i < 4; ++i) {
+        int y = rc.top + (rc.bottom - rc.top) * i / 4;
+        MoveToEx(dc, rc.left, y, 0);
+        LineTo(dc, rc.right, y);
+    }
+    SelectObject(dc, old);
+    DeleteObject(grid);
+    HPEN pen = CreatePen(PS_SOLID, 2, RGB(79, 209, 197));
+    old = SelectObject(dc, pen);
+    int lastX = rc.left;
+    int lastY = rc.bottom - 6;
+    for (int i = 0; i < V8K_GRAPH_SAMPLES; ++i) {
+        int idx = (g_stats.graphHead + i) % V8K_GRAPH_SAMPLES;
+        double v = ClampD(g_stats.graph[idx] / 5.0, 0.0, 1.0);
+        int x = rc.left + 6 + (rc.right - rc.left - 12) * i / (V8K_GRAPH_SAMPLES - 1);
+        int y = rc.bottom - 6 - (int)((rc.bottom - rc.top - 12) * v);
+        if (i == 0) MoveToEx(dc, x, y, 0);
+        else LineTo(dc, x, y);
+        lastX = x;
+        lastY = y;
+    }
+    MoveToEx(dc, lastX, lastY, 0);
+    SelectObject(dc, old);
+    DeleteObject(pen);
+}
+
+static void DrawDashboard(HDC dc, RECT client) {
+    WCHAR buf[128];
+    RECT top = {24, 76, client.right - 24, 122};
+    g_startButton = {client.right - 176, 78, client.right - 24, 116};
+    g_modeButton = {client.right - 340, 78, client.right - 188, 116};
+    g_syncButton = {client.right - 504, 78, client.right - 352, 116};
+    SelectObject(dc, g_fontBold);
+    DrawTextIn(dc, top, V8K_APP_NAME, RGB(242, 245, 248), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    DrawButton(dc, g_startButton, InterlockedCompareExchange(&g_settings.enabled, 0, 0) ? L"STOP" : L"START", InterlockedCompareExchange(&g_settings.enabled, 0, 0));
+    DrawButton(dc, g_modeButton, InterlockedCompareExchange(&g_settings.highPerformance, 0, 0) ? L"HIGH PERF" : L"ECO", InterlockedCompareExchange(&g_settings.highPerformance, 0, 0));
+    DrawButton(dc, g_syncButton, InterlockedCompareExchange(&g_settings.syncToDwm, 0, 0) ? L"VSYNC ON" : L"VSYNC OFF", InterlockedCompareExchange(&g_settings.syncToDwm, 0, 0));
+    RECT hint = {24, 118, client.right - 24, 138};
+    SelectObject(dc, g_font);
+    DrawTextIn(dc, hint, L"START: relatif enjeksiyon, imlec hizi korunur | HIGH PERF: timer/thread onceligi | VSYNC: sadece zaman ofseti, frame bekletmez", RGB(145, 155, 168), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+
+    int y = 142;
+    int w = (client.right - 72) / 3;
+    swprintf(buf, 128, L"%.1f Hz", g_stats.physicalHz);
+    DrawMetric(dc, 24, y, w, 74, L"Physical Polling Hz", buf, RGB(240, 246, 255));
+    swprintf(buf, 128, L"%.0f Hz", g_stats.outputHzMeasured > 1.0 ? g_stats.outputHzMeasured : (g_stats.virtualHz > 0.0 ? g_stats.virtualHz : V8K_MAX_OUTPUT_HZ));
+    DrawMetric(dc, 36 + w, y, w, 74, L"Virtual Output Hz", buf, RGB(79, 209, 197));
+    swprintf(buf, 128, L"%.1f / %.1f / %.1f us", g_stats.latencyMinUs, g_stats.latencyAvgUs, g_stats.latencyMaxUs);
+    DrawMetric(dc, 48 + w * 2, y, w, 74, L"Latency Min/Avg/Max", buf, RGB(255, 205, 112));
+    y += 90;
+    swprintf(buf, 128, L"%.1f%%", g_stats.cpuPercent);
+    DrawMetric(dc, 24, y, w, 74, L"CPU", buf, RGB(190, 225, 255));
+    swprintf(buf, 128, L"%dx microstep", ComputeMicroSteps(g_stats.physicalHz));
+    DrawMetric(dc, 36 + w, y, w, 74, L"Interpolation Ratio", buf, RGB(210, 190, 255));
+    swprintf(buf, 128, L"%.3f m/s", g_stats.speedMetersPerSec);
+    DrawMetric(dc, 48 + w * 2, y, w, 74, L"Cursor Speed", buf, RGB(255, 238, 180));
+    RECT graph = {24, y + 96, client.right - 24, client.bottom - 74};
+    DrawGraph(dc, graph);
+    RECT status = {24, client.bottom - 54, client.right - 24, client.bottom - 24};
+    WCHAR statusText[256];
+    if (!LicenseAllowsEngine()) swprintf(statusText, 256, L"%s", g_license.status);
+    else if (InterlockedCompareExchange(&g_stats.safeMode, 0, 0)) swprintf(statusText, 256, L"%s", g_stats.warning);
+    else swprintf(statusText, 256, L"Engine ready | %s | %s", g_hw.gpuVendor, g_hw.syncStatus);
+    DrawFilledRect(dc, status, RGB(24, 27, 32));
+    DrawBorder(dc, status, RGB(54, 59, 67));
+    DrawTextIn(dc, status, statusText, LicenseAllowsEngine() ? RGB(184, 228, 215) : RGB(255, 170, 140), DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+}
+
+static void DrawSlider(HDC dc, int idx, int x, int y, int w, const WCHAR* label, const WCHAR* desc, double value, double minV, double maxV) {
+    RECT row = {x, y, x + w, y + 70};
+    RECT lab = {x, y, x + (w * 42) / 100, y + 24};
+    RECT help = {x + (w * 44) / 100, y, x + w, y + 24};
+    WCHAR text[128];
+    swprintf(text, 128, L"%s  %.4f", label, value);
+    SelectObject(dc, g_fontBold);
+    DrawTextIn(dc, lab, text, RGB(230, 235, 240), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    SelectObject(dc, g_font);
+    DrawTextIn(dc, help, desc, RGB(150, 160, 174), DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+    RECT track = {x, y + 42, x + w, y + 50};
+    g_sliderRects[idx] = track;
+    DrawFilledRect(dc, track, RGB(45, 51, 60));
+    double t = (value - minV) / (maxV - minV);
+    t = ClampD(t, 0.0, 1.0);
+    RECT fill = track;
+    fill.right = fill.left + (int)((fill.right - fill.left) * t);
+    DrawFilledRect(dc, fill, RGB(79, 209, 197));
+    int kx = track.left + (int)((track.right - track.left) * t);
+    RECT knob = {kx - 7, track.top - 7, kx + 7, track.bottom + 7};
+    DrawFilledRect(dc, knob, RGB(230, 245, 242));
+    DrawBorder(dc, row, RGB(32, 36, 43));
+}
+
+static void DrawAdvanced(HDC dc, RECT client) {
+    RECT head = {24, 78, client.right - 24, 116};
+    SelectObject(dc, g_fontBold);
+    DrawTextIn(dc, head, L"Gelismis Ayarlar", RGB(242, 245, 248), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    int x = 36;
+    int y = 138;
+    int w = client.right - 72;
+    DrawSlider(dc, 0, x, y, w, L"Kalman Q", L"Tahmin gurultusu: yuksek deger daha hizli tepki verir", g_settings.kalmanQ, 0.0001, 0.20);
+    DrawSlider(dc, 1, x, y + 86, w, L"Kalman R", L"Sensor gurultusu: yuksek deger daha cok yumusatir", g_settings.kalmanR, 0.0010, 2.00);
+    DrawSlider(dc, 2, x, y + 172, w, L"Spline Tension", L"Egri gerginligi: dusuk deger daha yumusak hareket verir", g_settings.splineTension, 0.0, 1.0);
+    DrawSlider(dc, 3, x, y + 258, w, L"VSync Offset us", L"Zamanlama ince ayari; DWM beklemesi yapmaz", g_settings.syncOffsetUs, -500.0, 500.0);
+    DrawSlider(dc, 4, x, y + 344, w, L"Sanal Hz Limiti (Oyun/Drop Uyumu)", L"Roblox/Eski motorlarda FPS dusmemesi icin 2K/4K yapin", g_settings.virtualHzLimit, 1000.0, 8000.0);
+    
+    RECT autoBtn = {x, y + 420, x + 180, y + 452};
+    DrawButton(dc, autoBtn, L"OTO-OPTI MIZE ET", FALSE);
+    RECT testBtn = {x + 192, y + 420, client.right - 36, y + 452};
+    DrawButton(dc, testBtn, InterlockedCompareExchange(&g_settings.testMode, 0, 0) ? L"TEST MODU ACIK (Kasma Yapabilir)" : L"TEST MODU KAPALI (Onerilen)", InterlockedCompareExchange(&g_settings.testMode, 0, 0));
+    RECT aggBtn = {x, y + 458, x + 280, y + 490};
+    DrawButton(dc, aggBtn, InterlockedCompareExchange(&g_settings.aggressiveRaw, 0, 0) ? L"AGRESIF RAW ACIK (Tiklama bozabilir)" : L"AGRESIF RAW KAPALI (Onerilen)", InterlockedCompareExchange(&g_settings.aggressiveRaw, 0, 0));
+
+    RECT info = {36, y + 504, client.right - 36, y + 576};
+    DrawFilledRect(dc, info, RGB(24, 27, 32));
+    DrawBorder(dc, info, RGB(54, 59, 67));
+    WCHAR text[256];
+    swprintf(text, 256, L"Hedef limit: %.0f Hz | Dinamik oran: %dx | Windows hiz: %d/20 | Accel: %d", g_settings.virtualHzLimit, ComputeMicroSteps(g_stats.physicalHz), g_pointer.speed, g_pointer.acceleration);
+    DrawTextIn(dc, info, text, RGB(178, 190, 202), DT_CENTER | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+}
+
+static void DrawDiagnostics(HDC dc, RECT client) {
+    RECT rc = {30, 86, client.right - 30, client.bottom - 30};
+    DrawFilledRect(dc, rc, RGB(24, 27, 32));
+    DrawBorder(dc, rc, RGB(54, 59, 67));
+    int y = rc.top + 18;
+    WCHAR line[512];
+    SelectObject(dc, g_fontBold);
+    RECT r = {rc.left + 18, y, rc.right - 18, y + 28};
+    DrawTextIn(dc, r, L"Hardware Diagnostics", RGB(242, 245, 248), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    y += 44;
+    SelectObject(dc, g_font);
+    int g = GcdI(g_hw.width, g_hw.height);
+    swprintf(line, 512, L"Monitor: %s  |  %dx%d  %.3f Hz  %d bpp  aspect %d:%d", g_hw.monitorDevice, g_hw.width, g_hw.height, g_hw.refreshHz, g_hw.bpp, g_hw.width / g, g_hw.height / g);
+    r = {rc.left + 18, y, rc.right - 18, y + 24};
+    DrawTextIn(dc, r, line, RGB(218, 224, 232), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    y += 30;
+    swprintf(line, 512, L"Physical size: %d x %d mm  |  Pixel clock: %.3f MHz", g_hw.physicalWidthMm, g_hw.physicalHeightMm, g_hw.pixelClockMHz);
+    r = {rc.left + 18, y, rc.right - 18, y + 24};
+    DrawTextIn(dc, r, line, RGB(218, 224, 232), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    y += 30;
+    swprintf(line, 512, L"GPU: %s  |  Vendor: %s", g_hw.gpuName, g_hw.gpuVendor);
+    r = {rc.left + 18, y, rc.right - 18, y + 24};
+    DrawTextIn(dc, r, line, RGB(218, 224, 232), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    y += 30;
+    swprintf(line, 512, L"Sync: %s  |  %s", g_hw.syncStatus, g_hw.mpoStatus);
+    r = {rc.left + 18, y, rc.right - 18, y + 24};
+    DrawTextIn(dc, r, line, RGB(218, 224, 232), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    y += 30;
+    swprintf(line, 512, L"Mouse devices: %d  |  Active raw path: %s", g_hw.mouseCount, g_hw.mouseName);
+    r = {rc.left + 18, y, rc.right - 18, y + 24};
+    DrawTextIn(dc, r, line, RGB(218, 224, 232), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    y += 30;
+    swprintf(line, 512, L"Windows pointer: speed %d/20  |  thresholds %d/%d  |  acceleration %d", g_pointer.speed, g_pointer.threshold1, g_pointer.threshold2, g_pointer.acceleration);
+    r = {rc.left + 18, y, rc.right - 18, y + 24};
+    DrawTextIn(dc, r, line, RGB(218, 224, 232), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    y += 30;
+    swprintf(line, 512, L"Gercek olaylar: %ld  |  Sanal olaylar: %ld  |  Kuyruk: %d  |  Is parcacigi: %s", g_stats.rawEvents, g_stats.injectedEvents, QueueDepth(), g_rawThread ? L"aktif" : L"kapali");
+    r = {rc.left + 18, y, rc.right - 18, y + 24};
+    DrawTextIn(dc, r, line, RGB(218, 224, 232), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+}
+
+static void DrawTests(HDC dc, RECT client) {
+    RECT head = {24, 78, client.right - 24, 116};
+    SelectObject(dc, g_fontBold);
+    DrawTextIn(dc, head, L"Latency Testleri", RGB(242, 245, 248), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    int w = (client.right - 72) / 3;
+    WCHAR buf[160];
+    int y = 136;
+    swprintf(buf, 160, L"%.1f / %.1f / %.1f us", g_stats.rawPeriodMinUs, g_stats.rawPeriodAvgUs, g_stats.rawPeriodMaxUs);
+    DrawMetric(dc, 24, y, w, 78, L"Polling Period Min/Avg/Max", buf, RGB(226, 40, 200));
+    swprintf(buf, 160, L"%.0f Hz", g_stats.rawPeriodAvgUs > 0.0 ? 1000000.0 / g_stats.rawPeriodAvgUs : 0.0);
+    DrawMetric(dc, 36 + w, y, w, 78, L"Measured Polling Rate", buf, RGB(240, 246, 255));
+    swprintf(buf, 160, L"%.1f us", g_stats.engineAgeUs);
+    DrawMetric(dc, 48 + w * 2, y, w, 78, L"Raw -> Engine Age", buf, RGB(255, 205, 112));
+    y += 96;
+    swprintf(buf, 160, L"%.0f Hz", g_stats.outputHzMeasured);
+    DrawMetric(dc, 24, y, w, 78, L"Measured Output Rate", buf, RGB(210, 190, 255));
+    swprintf(buf, 160, L"%ld / %ld", g_stats.coalescedEvents, g_stats.droppedEvents);
+    DrawMetric(dc, 36 + w, y, w, 78, L"Coalesced / Dropped", buf, RGB(255, 238, 180));
+    swprintf(buf, 160, L"%d", QueueDepth());
+    DrawMetric(dc, 48 + w * 2, y, w, 78, L"Queue Depth", buf, RGB(190, 225, 255));
+    y += 96;
+    swprintf(buf, 160, L"%.1f us", g_stats.m1HookLatencyUs);
+    DrawMetric(dc, 24, y, w, 78, L"M1 Hook Age", buf, RGB(210, 190, 255));
+    swprintf(buf, 160, L"%.1f us", g_stats.m1WindowLatencyUs);
+    DrawMetric(dc, 36 + w, y, w, 78, L"M1 Hook -> Window", buf, RGB(255, 238, 180));
+    swprintf(buf, 160, L"%ld clicks", g_stats.m1Events);
+    DrawMetric(dc, 48 + w * 2, y, w, 78, L"M1 Samples", buf, RGB(190, 225, 255));
+    y += 104;
+    RECT note = {24, y, client.right - 24, y + 76};
+    DrawFilledRect(dc, note, RGB(24, 27, 32));
+    DrawBorder(dc, note, RGB(54, 59, 67));
+    DrawTextIn(dc, note, L"M1 Hook Age motor START iken Windows'un low-level hook'a olayi teslim etme yasidir. Hook -> Window sadece bu pencereye tiklayinca olculur. Raw -> Engine 2500 us ustune cikarsa catch-up devreye girer.", RGB(178, 190, 202), DT_LEFT | DT_WORDBREAK | DT_VCENTER);
+    RECT graph = {24, y + 98, client.right - 24, client.bottom - 34};
+    DrawGraph(dc, graph);
+}
+
+static void LayoutLicenseControls(RECT client) {
+    MoveWindow(g_hEmailEdit, 188, 168, client.right - 240, 28, TRUE);
+    MoveWindow(g_hKeyEdit, 188, 214, client.right - 240, 28, TRUE);
+    BOOL show = (g_activeTab == 4);
+    ShowWindow(g_hEmailEdit, show ? SW_SHOW : SW_HIDE);
+    ShowWindow(g_hKeyEdit, show ? SW_SHOW : SW_HIDE);
+}
+
+static void DrawLicense(HDC dc, RECT client) {
+    LayoutLicenseControls(client);
+    RECT rc = {30, 86, client.right - 30, client.bottom - 30};
+    DrawFilledRect(dc, rc, RGB(24, 27, 32));
+    DrawBorder(dc, rc, RGB(54, 59, 67));
+    RECT title = {rc.left + 18, rc.top + 20, rc.right - 18, rc.top + 52};
+    SelectObject(dc, g_fontBold);
+    DrawTextIn(dc, title, L"License", RGB(242, 245, 248), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    RECT status = {rc.left + 18, rc.top + 64, rc.right - 18, rc.top + 96};
+    DrawTextIn(dc, status, g_license.status, g_license.pro ? RGB(126, 238, 206) : RGB(255, 205, 112), DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+    RECT l1 = {rc.left + 18, 168, 176, 196};
+    RECT l2 = {rc.left + 18, 214, 176, 242};
+    SelectObject(dc, g_font);
+    DrawTextIn(dc, l1, L"Email", RGB(190, 199, 210), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    DrawTextIn(dc, l2, L"License Key", RGB(190, 199, 210), DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+    g_licenseButton = {188, 268, 352, 306};
+    DrawButton(dc, g_licenseButton, L"ACTIVATE", g_license.pro);
+}
+
+static void PaintUi(HWND hwnd) {
+    RECT client;
+    GetClientRect(hwnd, &client);
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
+    HDC mem = CreateCompatibleDC(hdc);
+    HBITMAP bmp = CreateCompatibleBitmap(hdc, client.right - client.left, client.bottom - client.top);
+    HGDIOBJ oldBmp = SelectObject(mem, bmp);
+    DrawFilledRect(mem, client, RGB(10, 10, 12));
+    DrawTabs(mem, client);
+    if (g_activeTab != 4) LayoutLicenseControls(client);
+    if (g_activeTab == 0) DrawDashboard(mem, client);
+    else if (g_activeTab == 1) DrawAdvanced(mem, client);
+    else if (g_activeTab == 2) DrawDiagnostics(mem, client);
+    else if (g_activeTab == 3) DrawTests(mem, client);
+    else DrawLicense(mem, client);
+    BitBlt(hdc, 0, 0, client.right - client.left, client.bottom - client.top, mem, 0, 0, SRCCOPY);
+    SelectObject(mem, oldBmp);
+    DeleteObject(bmp);
+    DeleteDC(mem);
+    EndPaint(hwnd, &ps);
+}
+
+static BOOL EnsureMouseHook(BOOL on) {
+    if (on) {
+        if (g_mouseHook || g_hookThread) return TRUE;
+        if (g_hookReady) {
+            CloseHandle(g_hookReady);
+            g_hookReady = 0;
+        }
+        InterlockedExchange(&g_hookOk, 0);
+        g_hookReady = CreateEventW(0, TRUE, FALSE, 0);
+        g_hookThread = CreateThread(0, 0, HookThreadProc, 0, 0, 0);
+        if (!g_hookThread || WaitForSingleObject(g_hookReady, 700) != WAIT_OBJECT_0 ||
+            !InterlockedCompareExchange(&g_hookOk, 0, 0)) {
+            if (g_hookThread) {
+                PostThreadMessageW(g_hookThreadId, WM_QUIT, 0, 0);
+                WaitForSingleObject(g_hookThread, 500);
+                CloseHandle(g_hookThread);
+                g_hookThread = 0;
+            }
+            if (g_hookReady) {
+                CloseHandle(g_hookReady);
+                g_hookReady = 0;
+            }
+            InterlockedExchange(&g_stats.safeMode, 1);
+            SetWarning(L"Safe mode: low-level mouse hook unavailable");
+            return FALSE;
+        }
+        return TRUE;
+    }
+    if (g_hookThread) {
+        PostThreadMessageW(g_hookThreadId, WM_QUIT, 0, 0);
+        WaitForSingleObject(g_hookThread, 1000);
+        CloseHandle(g_hookThread);
+        g_hookThread = 0;
+        g_hookThreadId = 0;
+    } else if (g_mouseHook) {
+        UnhookWindowsHookEx(g_mouseHook);
+        g_mouseHook = 0;
+    }
+    if (g_hookReady) {
+        CloseHandle(g_hookReady);
+        g_hookReady = 0;
+    }
+    InterlockedExchange(&g_hookOk, 0);
+    return TRUE;
+}
+
+static void ToggleEngine() {
+    if (!LicenseAllowsEngine()) {
+        SetWarning(L"License required");
+        InterlockedExchange(&g_settings.enabled, 0);
+        EnsureMouseHook(FALSE);
+        return;
+    }
+    LONG now = InterlockedCompareExchange(&g_settings.enabled, 0, 0);
+    if (!now) {
+        if (!EnsureMouseHook(TRUE)) {
+            InterlockedExchange(&g_settings.enabled, 0);
+            return;
+        }
+        InterlockedExchange(&g_settings.enabled, 1);
+        InterlockedExchange(&g_stats.safeMode, 0);
+        QueueClear();
+        g_stats.latencyMinUs = 0.0;
+        g_stats.latencyMaxUs = 0.0;
+        g_stats.latencyAvgUs = 0.0;
+        g_stats.rawPeriodMinUs = 0.0;
+        g_stats.rawPeriodMaxUs = 0.0;
+        g_stats.rawPeriodAvgUs = 0.0;
+        g_stats.engineAgeUs = 0.0;
+        g_stats.outputHzMeasured = 0.0;
+        SetWarning(L"Engine active: output capped at 8 kHz");
+        QueryPerformanceCounter(&g_lastPhysicalQpc);
+    } else {
+        InterlockedExchange(&g_settings.enabled, 0);
+        EnsureMouseHook(FALSE);
+        QueueClear();
+        SetWarning(L"Engine stopped");
+    }
+}
+
+static void SliderSetValue(int idx, int x) {
+    RECT r = g_sliderRects[idx];
+    double t = (double)(x - r.left) / (double)(r.right - r.left);
+    t = ClampD(t, 0.0, 1.0);
+    if (idx == 0) g_settings.kalmanQ = 0.0001 + t * (0.20 - 0.0001);
+    else if (idx == 1) g_settings.kalmanR = 0.001 + t * (2.00 - 0.001);
+    else if (idx == 2) g_settings.splineTension = t;
+    else if (idx == 3) g_settings.syncOffsetUs = -500.0 + t * 1000.0;
+    else if (idx == 4) g_settings.virtualHzLimit = 1000.0 + t * 7000.0;
+}
+
+static BOOL PtInRectI(RECT r, int x, int y) {
+    return x >= r.left && x < r.right && y >= r.top && y < r.bottom;
+}
+
+static void HandleClickDown(HWND hwnd, int x, int y) {
+    if (y >= 18 && y <= 52) {
+        int tab = (x - 18) / 130;
+        if (tab >= 0 && tab < 5) {
+            int left = 18 + tab * 130;
+            if (x >= left && x < left + 124) {
+                g_activeTab = tab;
+                RECT c;
+                GetClientRect(hwnd, &c);
+                LayoutLicenseControls(c);
+                InvalidateRect(hwnd, 0, FALSE);
+                return;
+            }
+        }
+    }
+    if (g_activeTab == 0) {
+        if (PtInRectI(g_startButton, x, y)) ToggleEngine();
+        else if (PtInRectI(g_modeButton, x, y)) {
+            LONG hp = InterlockedCompareExchange(&g_settings.highPerformance, 0, 0);
+            InterlockedExchange(&g_settings.highPerformance, hp ? 0 : 1);
+            ApplyPerformanceMode();
+        } else if (PtInRectI(g_syncButton, x, y)) {
+            LONG s = InterlockedCompareExchange(&g_settings.syncToDwm, 0, 0);
+            InterlockedExchange(&g_settings.syncToDwm, s ? 0 : 1);
+        }
+    } else if (g_activeTab == 1) {
+        for (int i = 0; i < 5; ++i) {
+            RECT hot = g_sliderRects[i];
+            hot.top -= 12; hot.bottom += 12;
+            if (PtInRectI(hot, x, y)) {
+                g_dragSlider = i;
+                SliderSetValue(i, x);
+                InvalidateRect(hwnd, 0, FALSE);
+                return;
+            }
+        }
+        RECT autoBtn = {36, 138 + 420, 36 + 180, 138 + 452};
+        if (PtInRectI(autoBtn, x, y)) {
+            g_settings.kalmanQ = 0.20;
+            g_settings.kalmanR = 0.001;
+            g_settings.splineTension = 0.1;
+            g_settings.virtualHzLimit = 8000.0;
+            InterlockedExchange(&g_settings.highPerformance, 1);
+            ApplyPerformanceMode();
+            InvalidateRect(hwnd, 0, FALSE);
+            return;
+        }
+        RECT testBtn = {36 + 192, 138 + 420, 36 + 500, 138 + 452};
+        if (PtInRectI(testBtn, x, y)) {
+            LONG tm = InterlockedCompareExchange(&g_settings.testMode, 0, 0);
+            InterlockedExchange(&g_settings.testMode, tm ? 0 : 1);
+            InvalidateRect(hwnd, 0, FALSE);
+            return;
+        }
+        RECT aggBtn = {36, 138 + 458, 36 + 316, 138 + 490};
+        if (PtInRectI(aggBtn, x, y)) {
+            LONG ar = InterlockedCompareExchange(&g_settings.aggressiveRaw, 0, 0);
+            InterlockedExchange(&g_settings.aggressiveRaw, ar ? 0 : 1);
+            ReregisterRawMouse();
+            InvalidateRect(hwnd, 0, FALSE);
+            return;
+        }
+    } else if (g_activeTab == 4) {
+        if (PtInRectI(g_licenseButton, x, y)) {
+            ActivateLicenseFromUi();
+        }
+    }
+    InvalidateRect(hwnd, 0, FALSE);
+}
+
+static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
+    switch (msg) {
+    case WM_CREATE: {
+        g_editBrush = CreateSolidBrush(RGB(31, 34, 39));
+        g_font = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
+        g_fontBold = CreateFontW(-17, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
+        g_hEmailEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_license.email, WS_CHILD | ES_AUTOHSCROLL, 0, 0, 100, 24, hwnd, 0, g_hInst, 0);
+        g_hKeyEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_license.key, WS_CHILD | ES_AUTOHSCROLL, 0, 0, 100, 24, hwnd, 0, g_hInst, 0);
+        SendMessageW(g_hEmailEdit, WM_SETFONT, (WPARAM)g_font, TRUE);
+        SendMessageW(g_hKeyEdit, WM_SETFONT, (WPARAM)g_font, TRUE);
+        if (g_dwm.DwmSetWindowAttribute_p) {
+            BOOL on = TRUE;
+            g_dwm.DwmSetWindowAttribute_p(hwnd, 20, &on, sizeof(on));
+            g_dwm.DwmSetWindowAttribute_p(hwnd, 19, &on, sizeof(on));
+        }
+        SetTimer(hwnd, 1, 250, 0);
+        break;
+    }
+    case WM_INPUT:
+        ProcessRawInput(lp);
+        return 0;
+    case WM_INPUT_DEVICE_CHANGE:
+        DetectRawMouse();
+        InvalidateRect(hwnd, 0, FALSE);
+        return 0;
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLOREDIT: {
+        HDC dc = (HDC)wp;
+        SetTextColor(dc, RGB(236, 240, 245));
+        SetBkColor(dc, RGB(31, 34, 39));
+        return (LRESULT)g_editBrush;
+    }
+    case WM_LBUTTONDOWN:
+        UpdateM1WindowLatency();
+        SetCapture(hwnd);
+        HandleClickDown(hwnd, GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
+        return 0;
+    case WM_MOUSEMOVE:
+        if (g_dragSlider >= 0 && (wp & MK_LBUTTON)) {
+            SliderSetValue(g_dragSlider, GET_X_LPARAM(lp));
+            InvalidateRect(hwnd, 0, FALSE);
+        }
+        return 0;
+    case WM_LBUTTONUP:
+        g_dragSlider = -1;
+        ReleaseCapture();
+        return 0;
+    case WM_SIZE: {
+        RECT c;
+        GetClientRect(hwnd, &c);
+        LayoutLicenseControls(c);
+        return 0;
+    }
+    case WM_TIMER:
+        RefreshPointerInfo();
+        UpdateCpuUsage();
+        if (GetForegroundWindow() == hwnd) {
+            InvalidateRect(hwnd, 0, FALSE);
+        }
+        return 0;
+    case WM_PAINT:
+        PaintUi(hwnd);
+        return 0;
+    case WM_CLOSE:
+        DestroyWindow(hwnd);
+        return 0;
+    case WM_DESTROY:
+        InterlockedExchange(&g_shutdown, 1);
+        if (g_rawEvent) SetEvent(g_rawEvent);
+        if (g_engineThread) {
+            WaitForSingleObject(g_engineThread, 1000);
+            CloseHandle(g_engineThread);
+            g_engineThread = 0;
+        }
+        EnsureMouseHook(FALSE);
+        if (g_rawThread) {
+            PostThreadMessageW(g_rawThreadId, WM_QUIT, 0, 0);
+            WaitForSingleObject(g_rawThread, 1000);
+            CloseHandle(g_rawThread);
+            g_rawThread = 0;
+            g_rawThreadId = 0;
+        } else {
+            UnregisterRawMouse();
+        }
+        if (g_rawReady) {
+            CloseHandle(g_rawReady);
+            g_rawReady = 0;
+        }
+        if (g_font) DeleteObject(g_font);
+        if (g_fontBold) DeleteObject(g_fontBold);
+        if (g_editBrush) DeleteObject(g_editBrush);
+        if (g_rawEvent) CloseHandle(g_rawEvent);
+        PostQuitMessage(0);
+        return 0;
+    }
+    return DefWindowProcW(hwnd, msg, wp, lp);
+}
+
+static int RunApp(HINSTANCE hInst, int nCmdShow) {
+    g_hInst = hInst;
+    HMODULE user32 = GetModuleHandleW(L"user32.dll");
+    if (user32) {
+        BOOL (WINAPI *SetProcessDPIAware_p)(void) = (BOOL (WINAPI*)(void))GetProcAddress(user32, "SetProcessDPIAware");
+        if (SetProcessDPIAware_p) SetProcessDPIAware_p();
+    }
+    QueryPerformanceFrequency(&g_qpcFreq);
+    QueryPerformanceCounter(&g_engineHeartbeatQpc);
+    LoadDynamicApis();
+    LoadLicenseState();
+    DetectHardware();
+    ZeroMemory(&g_stats, sizeof(g_stats));
+    g_stats.latencyMinUs = 0.0;
+    g_stats.latencyMaxUs = 0.0;
+    g_stats.latencyAvgUs = 0.0;
+    SetWarning(L"Engine ready");
+
+    WNDCLASSEXW wc;
+    ZeroMemory(&wc, sizeof(wc));
+    wc.cbSize = sizeof(wc);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = hInst;
+    wc.hCursor = LoadCursorW(0, MAKEINTRESOURCEW(32512));
+    wc.hIcon = LoadIconW(0, MAKEINTRESOURCEW(32512));
+    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wc.lpszClassName = V8K_CLASS_NAME;
+    RegisterClassExW(&wc);
+
+    g_rawEvent = CreateEventW(0, FALSE, FALSE, 0);
+    g_rawReady = CreateEventW(0, TRUE, FALSE, 0);
+    g_rawThread = CreateThread(0, 0, RawThreadProc, 0, 0, 0);
+    if (g_rawThread && g_rawReady) WaitForSingleObject(g_rawReady, 1000);
+    g_engineThread = CreateThread(0, 0, EngineThreadProc, 0, 0, 0);
+
+    HWND hwnd = CreateWindowExW(WS_EX_APPWINDOW, V8K_CLASS_NAME, L"Virtual 8K Pro", WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT, 980, 680, 0, 0, hInst, 0);
+    g_hWnd = hwnd;
+    if (!hwnd) return 1;
+    ShowWindow(hwnd, nCmdShow);
+    UpdateWindow(hwnd);
+
+    MSG msg;
+    while (GetMessageW(&msg, 0, 0, 0) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+    return (int)msg.wParam;
+}
+
+int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int nCmdShow) {
+    FreeConsole();
+    return RunApp(hInst, nCmdShow);
+}
+
+int main() {
+    return wWinMain(GetModuleHandleW(0), 0, GetCommandLineW(), SW_SHOWNORMAL);
+}
